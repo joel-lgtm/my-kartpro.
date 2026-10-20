@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My KARTpro | Plateforme SaaS de Cartes de Visite Professionnelles</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- HTML2Canvas & jsPDF pour exports 300 DPI -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kart: {
+              orange: '#F37021',
+              darkorange: '#D95B10',
+              yellow: '#F7C600',
+              dark: '#1E1E1E',
+              black: '#121212',
+              gray: '#2C2C2C',
+              light: '#F8F9FA'
+            }
+          },
+          fontFamily: {
+            sans: ['"Century Gothic"', 'CenturyGothic', 'AppleGothic', 'Montserrat', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Typographie Century Gothic & Fallbacks */
+    body {
+      font-family: "Century Gothic", CenturyGothic, AppleGothic, "Segoe UI", sans-serif;
+    }
+    
+    /* 3D Card Flip styles */
+    .perspective-1000 {
+      perspective: 1200px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+    
+    /* Ratio carte de visite standard 85 x 55 mm (~ 1.545) */
+    .aspect-business-card {
+      aspect-ratio: 85 / 55;
+    }
+    .aspect-business-card-vert {
+      aspect-ratio: 55 / 85;
+    }
+
+    /* Print marks preview */
+    .print-bleed-guide {
+      outline: 2px dashed rgba(243, 112, 33, 0.7);
+      outline-offset: -8px;
+    }
+
+    /* Scrollbars personnalisées */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F1F1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4D4D8;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #F37021;
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col text-kart-dark bg-slate-50 antialiased selection:bg-kart-orange selection:text-white">
+
+  <!-- ============================================================ -->
+  <!-- 1. EN-TÊTE / NAVIGATION ET SWITCHER DE RÔLE -->
+  <!-- ============================================================ -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo officiel My KARTpro (Fidèle au logo de l'utilisateur) -->
+        <a href="#home" onclick="navTo('home')" class="flex items-center gap-3 group focus:outline-none">
+          <div class="relative w-12 h-12 flex-shrink-0 transition-transform group-hover:scale-105">
+            <svg viewBox="0 0 120 120" class="w-full h-full drop-shadow-sm">
+              <!-- Rayon Jaune -->
+              <rect x="25" y="15" width="8" height="42" rx="4" transform="rotate(-15 29 36)" fill="#F7C600"/>
+              <!-- Rayon Noir -->
+              <rect x="47" y="16" width="8" height="42" rx="4" transform="rotate(18 51 37)" fill="#231F20"/>
+              <!-- Rayon Orange oblique -->
+              <rect x="45" y="42" width="58" height="8" rx="4" transform="rotate(-26 74 46)" fill="#F37021"/>
+              <!-- Carte en perspective Orange -->
+              <polygon points="80,50 115,62 96,108 62,92" fill="#F37021" rx="4"/>
+              <!-- Coin blanc stylisé sur la carte -->
+              <polygon points="76,58 92,64 78,98 67,94" fill="#FFFFFF" opacity="0.9"/>
+            </svg>
+          </div>
+          <div class="flex flex-col">
+            <div class="text-2xl font-bold tracking-tight text-kart-black flex items-center">
+              <span>My KART</span>
+              <span class="text-kart-orange ml-0.5">pro</span>
+            </div>
+            <span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold -mt-1">Design & Impression • Burkina Faso</span>
+          </div>
+        </a>
+
+        <!-- Liens de navigation principale -->
+        <nav class="hidden md:flex items-center space-x-1 lg:space-x-3 text-sm font-semibold">
+          <button onclick="navTo('catalogue')" class="nav-link px-3 py-2 rounded-lg text-slate-700 hover:text-kart-orange hover:bg-orange-50 transition">
+            <i class="fa-solid fa-shapes mr-1.5 text-kart-orange"></i>Modèles
+          </button>
+          <button onclick="navTo('editor')" class="nav-link px-3 py-2 rounded-lg text-slate-700 hover:text-kart-orange hover:bg-orange-50 transition">
+            <i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-kart-orange"></i>Studio Éditeur
+          </button>
+          <button onclick="navTo('printers')" class="nav-link px-3 py-2 rounded-lg text-slate-700 hover:text-kart-orange hover:bg-orange-50 transition">
+            <i class="fa-solid fa-print mr-1.5 text-kart-orange"></i>Imprimeries Locales
+          </button>
+          <button onclick="navTo('pricing')" class="nav-link px-3 py-2 rounded-lg text-slate-700 hover:text-kart-orange hover:bg-orange-50 transition">
+            <i class="fa-solid fa-tags mr-1.5 text-kart-orange"></i>Compte Créatif
+          </button>
+          <button onclick="navTo('admin')" class="nav-link px-3 py-2 rounded-lg text-slate-700 hover:text-kart-orange hover:bg-orange-50 transition">
+            <i class="fa-solid fa-shield-halved mr-1.5 text-slate-600"></i>Admin
+          </button>
+        </nav>
+
+        <!-- Sélecteur de rôle & Actions -->
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold border border-slate-200">
+            <button onclick="switchRole('client')" id="roleBtn-client" class="px-2.5 py-1.5 rounded-lg bg-white text-kart-orange shadow-sm transition">Client</button>
+            <button onclick="switchRole('agency')" id="roleBtn-agency" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-kart-black transition">Imprimerie</button>
+            <button onclick="switchRole('admin')" id="roleBtn-admin" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-kart-black transition">Admin</button>
+          </div>
+
+          <button onclick="startQuickCreation()" class="bg-gradient-to-r from-kart-orange to-kart-darkorange hover:opacity-95 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>Créer ma carte</span>
+          </button>
+
+          <button onclick="toggleMobileMenu()" class="md:hidden text-slate-700 p-2 rounded-lg hover:bg-slate-100 focus:outline-none">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Drawer -->
+    <div id="mobileMenu" class="hidden md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-2">
+      <button onclick="navTo('catalogue'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-lg font-semibold text-slate-700 hover:bg-orange-50">Catalogue de Modèles</button>
+      <button onclick="navTo('editor'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-lg font-semibold text-slate-700 hover:bg-orange-50">Studio Éditeur</button>
+      <button onclick="navTo('printers'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-lg font-semibold text-slate-700 hover:bg-orange-50">Imprimeries Partenaires</button>
+      <button onclick="navTo('pricing'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-lg font-semibold text-slate-700 hover:bg-orange-50">Tarifs & Compte Créatif</button>
+      <button onclick="navTo('admin'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-lg font-semibold text-slate-700 hover:bg-orange-50">Espace Administrateur</button>
+    </div>
+  </header>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- Contenu Principal Multi-Vues -->
+  <main class="flex-grow">
+
+    <!-- ============================================================ -->
+    <!-- SECTION 1 : ACCUEIL HERO (GRAND PUBLIC & PRO) -->
+    <!-- ============================================================ -->
+    <section id="view-home" class="view-section">
+      <div class="relative overflow-hidden bg-gradient-to-b from-orange-50/60 via-white to-slate-50 pt-12 pb-20 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-100/80 border border-kart-orange/30 text-kart-orange text-xs font-bold uppercase tracking-wider">
+                <i class="fa-solid fa-bolt text-kart-yellow"></i>
+                Plateforme SaaS N°1 au Burkina Faso • Paiement SasPay / Orange Money
+              </div>
+              
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-kart-black leading-tight">
+                Votre carte de visite pro en <span class="text-transparent bg-clip-text bg-gradient-to-r from-kart-orange to-kart-darkorange">3 minutes chrono</span>.
+              </h1>
+              
+              <p class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
+                Choisissez parmi nos modèles officiels haute fidélité, personnalisez vos coordonnées, importez votre logo ou vos photos de produits, payez via <strong>saspay.me (Orange Money / Moov Money)</strong> et connectez-vous avec nos <strong>imprimeries locales partenaires</strong>.
+              </p>
+
+              <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+                <button onclick="navTo('catalogue')" class="px-7 py-3.5 bg-kart-orange hover:bg-kart-darkorange text-white text-base font-bold rounded-xl shadow-lg shadow-orange-500/25 transition transform active:scale-95 flex items-center gap-3">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <span>Explorer les modèles</span>
+                </button>
+                <button onclick="navTo('printers')" class="px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 text-base font-bold rounded-xl border border-slate-300 shadow-sm transition flex items-center gap-2">
+                  <i class="fa-solid fa-location-dot text-kart-orange"></i>
+                  <span>Trouver un imprimeur</span>
+                </button>
+              </div>
+
+              <div class="pt-6 grid grid-cols-3 gap-4 border-t border-slate-200 max-w-lg mx-auto lg:mx-0">
+                <div class="text-left">
+                  <div class="text-xl font-black text-kart-dark">100% PDF/PNG</div>
+                  <div class="text-xs text-slate-500 font-medium">300 DPI Prêt à imprimer</div>
+                </div>
+                <div class="text-left">
+                  <div class="text-xl font-black text-kart-orange">Sans abonnement</div>
+                  <div class="text-xs text-slate-500 font-medium">Paiement à l'acte direct</div>
+                </div>
+                <div class="text-left">
+                  <div class="text-xl font-black text-kart-dark">Réseau Local</div>
+                  <div class="text-xs text-slate-500 font-medium">Partenaires à proximité</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hero Graphic (Carte 3D Interactive) -->
+            <div class="lg:col-span-5 flex justify-center">
+              <div class="relative w-full max-w-md perspective-1000 group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-kart-orange to-kart-yellow rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-500"></div>
+
+                <div class="relative w-full aspect-business-card rounded-2xl p-6 shadow-2xl bg-gradient-to-br from-slate-900 to-black text-white flex flex-col justify-between overflow-hidden border border-slate-800 transform rotate-1 hover:rotate-0 transition duration-300">
+                  <div class="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-kart-orange/20 blur-2xl"></div>
+                  <div class="absolute bottom-0 right-0 w-32 h-32 bg-kart-orange/10 transform rotate-45 translate-x-10 translate-y-10"></div>
+                  
+                  <div class="flex justify-between items-start z-10">
+                    <div>
+                      <div class="inline-block px-2.5 py-0.5 rounded-full bg-kart-orange/20 text-kart-orange border border-kart-orange/30 text-[10px] font-black uppercase tracking-wider mb-2">Modèle Professionnel</div>
+                      <h3 class="text-xl font-extrabold tracking-wide text-white">OUEDRAOGO M.</h3>
+                      <p class="text-xs text-kart-yellow font-semibold tracking-wider uppercase">Directeur Général • Ouaga Tech</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-kart-orange/20 border border-kart-orange/40 flex items-center justify-center text-kart-orange text-lg">
+                      <i class="fa-solid fa-cube"></i>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1.5 z-10 text-[11px] text-slate-300 font-light border-t border-slate-800/80 pt-3">
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-phone text-kart-orange w-4"></i> +226 70 00 00 00 / WhatsApp</div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-envelope text-kart-orange w-4"></i> contact@entreprise-bf.com</div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-kart-orange w-4"></i> Ouaga 2000, Ouagadougou</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Présentation des 3 Gammes de Prix (Claires & Fixées au préalable) -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <h2 class="text-3xl font-extrabold text-kart-black">Des tarifs transparents, affichés avant chaque clic</h2>
+          <p class="text-slate-600 mt-2">Aucune surprise : vous payez uniquement la génération finale de votre fichier prêt pour impression ou partage.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Gamme Essentiel -->
+          <div class="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <div class="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase mb-4">Gamme Essentielle</div>
+              <h3 class="text-2xl font-bold text-slate-900">Modèles Sobres</h3>
+              <p class="text-slate-500 text-sm mt-2">Mise en page épurée, personnalisation de base des coordonnées et typographie soignée.</p>
+              <div class="my-6">
+                <span class="text-4xl font-extrabold text-kart-dark" id="display-price-essentiel">2 500</span>
+                <span class="text-slate-500 font-bold ml-1">FCFA</span>
+                <span class="text-xs text-slate-400 block mt-1">Génération finale unique JPG & PNG</span>
+              </div>
+              <ul class="text-xs text-slate-600 space-y-2.5">
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Aperçu en temps réel</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Export haute définition</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Recto simple & épuré</li>
+              </ul>
+            </div>
+            <button onclick="filterByTier('Essentiel')" class="mt-8 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold rounded-xl transition">
+              Voir les modèles Essentiel
+            </button>
+          </div>
+
+          <!-- Gamme Standard -->
+          <div class="bg-white rounded-2xl p-7 border-2 border-kart-orange shadow-lg relative flex flex-col justify-between">
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-kart-orange text-white text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow">
+              Le Choix Préféré
+            </div>
+            <div>
+              <div class="inline-block px-3 py-1 rounded-full bg-orange-100 text-kart-orange text-xs font-bold uppercase mb-4">Gamme Standard</div>
+              <h3 class="text-2xl font-bold text-slate-900">Design Travaillé</h3>
+              <p class="text-slate-500 text-sm mt-2">Hiérarchie visuelle étudiée, intégration de votre logo personnalisé et choix étendu de finitions.</p>
+              <div class="my-6">
+                <span class="text-4xl font-extrabold text-kart-orange" id="display-price-standard">3 500</span>
+                <span class="text-slate-500 font-bold ml-1">FCFA</span>
+                <span class="text-xs text-slate-400 block mt-1">Export complet JPG, PNG + PDF HD</span>
+              </div>
+              <ul class="text-xs text-slate-600 space-y-2.5">
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Tout Essentiel inclus</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Ajout du Logo personnalisé</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Recto & Verso complets</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Fichier PDF avec traits de coupe</li>
+              </ul>
+            </div>
+            <button onclick="filterByTier('Standard')" class="mt-8 w-full py-3 bg-kart-orange hover:bg-kart-darkorange text-white text-sm font-bold rounded-xl shadow transition">
+              Voir les modèles Standard
+            </button>
+          </div>
+
+          <!-- Gamme Professionnelle -->
+          <div class="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <div class="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase mb-4">Gamme Pro & Luxe</div>
+              <h3 class="text-2xl font-bold text-slate-900">Premium & Stylé</h3>
+              <p class="text-slate-500 text-sm mt-2">Pour directeurs, consultants, mode & restauration : dorure, photos de produits et plats intégrées.</p>
+              <div class="my-6">
+                <span class="text-4xl font-extrabold text-kart-dark" id="display-price-professionnel">5 000</span>
+                <span class="text-slate-500 font-bold ml-1">FCFA</span>
+                <span class="text-xs text-slate-400 block mt-1">Fichiers d'impression 300 DPI certifiés</span>
+              </div>
+              <ul class="text-xs text-slate-600 space-y-2.5">
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Modèles luxueux haut de gamme</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Import Logo + Photos de profil ou produits</li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Mise en relation prioritaire imprimeur</li>
+              </ul>
+            </div>
+            <button onclick="filterByTier('Professionnel')" class="mt-8 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold rounded-xl transition">
+              Voir les modèles Pro
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 2 : CATALOGUE DES MODÈLES (AVEC PRIX DIRECT) -->
+    <!-- ============================================================ -->
+    <section id="view-catalogue" class="view-section hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+        <div>
+          <div class="text-xs uppercase font-extrabold text-kart-orange tracking-wider">Catalogue Officiel</div>
+          <h2 class="text-3xl font-black text-kart-black">Modèles de Cartes de Visite</h2>
+          <p class="text-sm text-slate-500 mt-1">Tous les modèles reproduisent fidèlement les designs fournis et affichent leur prix exact en FCFA.</p>
+        </div>
+        
+        <div class="text-xs font-semibold bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600 self-start md:self-auto">
+          Affichage de <span id="filteredCount" class="font-bold text-kart-black">9</span> modèles disponibles
+        </div>
+      </div>
+
+      <!-- Filtres & Moteur de recherche -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+          <input type="text" id="searchModelInput" oninput="applyFilters()" placeholder="Rechercher métier, style..." class="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+        </div>
+
+        <div>
+          <select id="filterTier" onchange="applyFilters()" class="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-medium text-slate-700">
+            <option value="ALL">Toutes les gammes de prix</option>
+            <option value="Essentiel">Essentiel (2 500 FCFA)</option>
+            <option value="Standard">Standard (3 500 FCFA)</option>
+            <option value="Professionnel">Professionnel (5 000 FCFA)</option>
+          </select>
+        </div>
+
+        <div>
+          <select id="filterSector" onchange="applyFilters()" class="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-medium text-slate-700">
+            <option value="ALL">Tous les secteurs d'activité</option>
+            <option value="corporate">Entreprise & Conseil</option>
+            <option value="tech">Tech, Digital & Startup</option>
+            <option value="sante">Santé & Bien-être</option>
+            <option value="btp">Restauration & Traiteur</option>
+            <option value="luxe">Mode, Tissus & Luxe</option>
+          </select>
+        </div>
+
+        <div>
+          <select id="filterOrientation" onchange="applyFilters()" class="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-medium text-slate-700">
+            <option value="ALL">Toutes orientations (H & V)</option>
+            <option value="horizontal">Format Horizontal (85x55mm)</option>
+            <option value="vertical">Format Vertical (55x85mm)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grille dynamique des modèles de cartes -->
+      <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rempli dynamiquement par renderCatalogue() -->
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 3 : STUDIO ÉDITEUR HAUTE FIDÉLITÉ (LIVE PREVIEW) -->
+    <!-- ============================================================ -->
+    <section id="view-editor" class="view-section hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+          <button onclick="navTo('catalogue')" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="editorModelName" class="text-xl font-extrabold text-kart-black">Modèle 01 : Tech Vert Lime & QR Code</h2>
+              <span id="editorModelBadge" class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-kart-orange/10 text-kart-orange">Standard</span>
+            </div>
+            <p class="text-xs text-slate-500">Personnalisez votre texte neutre, téléversez votre logo ou vos photos de produits et prévisualisez instantanément.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <div class="text-[10px] uppercase font-bold text-slate-400">Tarif de génération</div>
+            <div class="text-xl font-extrabold text-kart-orange">
+              <span id="editorModelPrice">3 500</span> FCFA
+            </div>
+          </div>
+          <button onclick="openPaymentModal()" class="px-5 py-2.5 bg-gradient-to-r from-kart-orange to-kart-darkorange hover:opacity-95 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center gap-2">
+            <i class="fa-solid fa-lock"></i>
+            <span>Commander & Télécharger</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Plan de travail de l'éditeur -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
+        
+        <!-- Panneau de configuration (Gauche) -->
+        <div class="lg:col-span-5 space-y-6">
+          
+          <div class="flex border-b border-slate-200 text-xs font-bold">
+            <button onclick="setEditorTab('textes')" id="tabBtn-textes" class="editor-tab-btn active px-4 py-2.5 border-b-2 border-kart-orange text-kart-orange">
+              <i class="fa-solid fa-font mr-1.5"></i>Coordonnées
+            </button>
+            <button onclick="setEditorTab('media')" id="tabBtn-media" class="editor-tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+              <i class="fa-solid fa-image mr-1.5"></i>Logo & Photos
+            </button>
+            <button onclick="setEditorTab('style')" id="tabBtn-style" class="editor-tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+              <i class="fa-solid fa-palette mr-1.5"></i>Couleurs
+            </button>
+          </div>
+
+          <!-- Onglet 1 : Textes & Informations -->
+          <div id="editorTab-textes" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nom</label>
+                <input type="text" id="inputNom" value="KABORE" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Prénom</label>
+                <input type="text" id="inputPrenom" value="Alexandre" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Fonction / Titre</label>
+              <input type="text" id="inputFonction" value="Directeur Général" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Nom de l'Entreprise</label>
+              <input type="text" id="inputEntreprise" value="ENTREPRISE PRO" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Slogan ou Activité</label>
+              <input type="text" id="inputSlogan" value="Solutions & Services Professionnels" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Téléphone Principal</label>
+                <input type="text" id="inputTel" value="+226 70 00 00 00" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp</label>
+                <input type="text" id="inputWhatsapp" value="+226 76 00 00 00" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Email Professionnel</label>
+                <input type="email" id="inputEmail" value="contact@votre-domaine.bf" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Site Web</label>
+                <input type="text" id="inputSite" value="www.votre-domaine.bf" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Adresse Géographique (Ville, Quartier)</label>
+              <input type="text" id="inputAdresse" value="Avenue Kwame N'Krumah, Ouagadougou" oninput="updateCardPreview()" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Onglet 2 : Médias (Logo, Photo de profil, Images produits) -->
+          <div id="editorTab-media" class="space-y-4 hidden">
+            <div class="bg-slate-100 p-4 rounded-xl border border-dashed border-slate-300">
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                <i class="fa-solid fa-copyright text-kart-orange mr-1"></i>Logo d'entreprise (PNG/JPG)
+              </label>
+              <input type="file" id="logoUploadInput" accept="image/*" onchange="handleImageUpload(event, 'logo')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-kart-orange file:text-white hover:file:opacity-90">
+              <div id="logoPreviewContainer" class="mt-2 flex items-center justify-between hidden">
+                <img id="logoPreviewImg" class="h-10 w-10 object-contain rounded bg-white p-1 border">
+                <button onclick="removeUploadedImage('logo')" class="text-red-500 text-xs font-semibold hover:underline">Supprimer le logo</button>
+              </div>
+            </div>
+
+            <div class="bg-slate-100 p-4 rounded-xl border border-dashed border-slate-300">
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                <i class="fa-solid fa-camera text-kart-orange mr-1"></i>Photo de profil ou Image produit / illustrative
+              </label>
+              <input type="file" id="photoUploadInput" accept="image/*" onchange="handleImageUpload(event, 'photo')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-white hover:file:opacity-90">
+              <div id="photoPreviewContainer" class="mt-2 flex items-center justify-between hidden">
+                <img id="photoPreviewImg" class="h-10 w-10 object-cover rounded-full border">
+                <button onclick="removeUploadedImage('photo')" class="text-red-500 text-xs font-semibold hover:underline">Supprimer la photo</button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+              <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
+              <span>Conseil : Les images haute résolution avec fond transparent sont idéales pour une netteté d'impression parfaite à 300 DPI.</span>
+            </div>
+          </div>
+
+          <!-- Onglet 3 : Style & Couleurs -->
+          <div id="editorTab-style" class="space-y-4 hidden">
+            <label class="block text-xs font-bold text-slate-700">Palettes de couleurs suggérées</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="setThemeColors('#FFFFFF', '#5BB318', '#1E293B')" class="p-2 border rounded-xl flex items-center gap-1.5 hover:border-kart-orange">
+                <span class="w-4 h-4 rounded-full bg-white border"></span>
+                <span class="w-4 h-4 rounded-full bg-[#5BB318]"></span>
+              </button>
+              <button onclick="setThemeColors('#FFFFFF', '#7EB5A6', '#334155')" class="p-2 border rounded-xl flex items-center gap-1.5 hover:border-kart-orange">
+                <span class="w-4 h-4 rounded-full bg-white border"></span>
+                <span class="w-4 h-4 rounded-full bg-[#7EB5A6]"></span>
+              </button>
+              <button onclick="setThemeColors('#18181B', '#E11D48', '#FFFFFF')" class="p-2 border rounded-xl flex items-center gap-1.5 hover:border-kart-orange">
+                <span class="w-4 h-4 rounded-full bg-[#18181B]"></span>
+                <span class="w-4 h-4 rounded-full bg-[#E11D48]"></span>
+              </button>
+              <button onclick="setThemeColors('#1F2421', '#F97316', '#FFFFFF')" class="p-2 border rounded-xl flex items-center gap-1.5 hover:border-kart-orange">
+                <span class="w-4 h-4 rounded-full bg-[#1F2421]"></span>
+                <span class="w-4 h-4 rounded-full bg-[#F97316]"></span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Couleur Principale</label>
+                <input type="color" id="colorPickerBg" value="#FFFFFF" onchange="updateCustomColors()" class="w-full h-9 p-0.5 border rounded-lg cursor-pointer">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Couleur d'Accent</label>
+                <input type="color" id="colorPickerAccent" value="#5BB318" onchange="updateCustomColors()" class="w-full h-9 p-0.5 border rounded-lg cursor-pointer">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Visualiseur de Carte Dynamique 3D (Droite) -->
+        <div class="lg:col-span-7 flex flex-col items-center">
+          
+          <div class="flex items-center gap-2 mb-4 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm text-xs font-semibold">
+            <button onclick="flipCardSide('front')" id="sideBtn-front" class="px-3 py-1 rounded-full bg-kart-orange text-white">Recto (Face)</button>
+            <button onclick="flipCardSide('back')" id="sideBtn-back" class="px-3 py-1 rounded-full text-slate-600 hover:text-slate-900">Verso (Dos)</button>
+            <div class="h-4 w-px bg-slate-200 mx-1"></div>
+            <button onclick="toggleBleedGuide()" id="bleedGuideBtn" class="px-2 py-1 text-slate-500 hover:text-kart-orange flex items-center gap-1">
+              <i class="fa-solid fa-crop-simple"></i> Repères de coupe
+            </button>
+          </div>
+
+          <!-- Conteneur 3D Flip Animation -->
+          <div class="w-full max-w-lg perspective-1000 my-auto py-4">
+            <div id="interactiveCard" class="relative w-full aspect-business-card rounded-2xl shadow-2xl transition-transform duration-700 transform-style-3d cursor-pointer select-none" onclick="toggleCardFlip()">
+              
+              <!-- RECTO DYNAMIQUE EXACT -->
+              <div id="cardFaceFront" class="absolute inset-0 w-full h-full rounded-2xl overflow-hidden backface-hidden shadow-inner border border-slate-300/60 bg-white">
+                <!-- Rendu injecté via renderCardFace() -->
+              </div>
+
+              <!-- VERSO DYNAMIQUE EXACT -->
+              <div id="cardFaceBack" class="absolute inset-0 w-full h-full rounded-2xl overflow-hidden backface-hidden rotate-y-180 shadow-inner border border-slate-300/60 bg-white">
+                <!-- Rendu injecté via renderCardFace() -->
+              </div>
+
+            </div>
+          </div>
+
+          <div class="text-xs text-slate-500 flex items-center gap-2 mt-2">
+            <i class="fa-solid fa-hand-pointer text-kart-orange animate-bounce"></i>
+            <span>Cliquez sur la carte pour la retourner (Recto / Verso)</span>
+          </div>
+
+          <div class="mt-6 flex flex-wrap gap-3 justify-center">
+            <button onclick="downloadCardPreview('png')" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-download text-kart-orange"></i> Aperçu PNG
+            </button>
+            <button onclick="openPaymentModal()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+              <i class="fa-solid fa-file-pdf"></i> Débloquer l'Export PDF Imprimeur (300 DPI)
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 4 : ANNUAIRE DES IMPRIMERIES LOCALES (BURKINA FASO) -->
+    <!-- ============================================================ -->
+    <section id="view-printers" class="view-section hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+        <div>
+          <span class="text-xs uppercase font-extrabold text-kart-orange tracking-wider">Mise en contact direct • Burkina Faso</span>
+          <h2 class="text-3xl font-black text-kart-black">Imprimeries Locales Partenaires</h2>
+          <p class="text-sm text-slate-500 mt-1">Imprimez vos cartes de visite chez des professionnels à Ouagadougou, Bobo-Dioulasso et environs.</p>
+        </div>
+
+        <button onclick="openAgencyRegisterModal()" class="px-5 py-2.5 bg-kart-orange hover:bg-kart-darkorange text-white text-xs sm:text-sm font-bold rounded-xl shadow transition flex items-center gap-2">
+          <i class="fa-solid fa-shop"></i>
+          <span>Inscrire mon imprimerie (15 000 F/mois)</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
+        <div class="relative">
+          <i class="fa-solid fa-location-dot absolute left-3.5 top-3.5 text-kart-orange text-xs"></i>
+          <input type="text" id="searchPrinterCity" oninput="filterPrinters()" placeholder="Ville ou quartier (ex: Ouaga 2000, Koulouba)..." class="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+        </div>
+        <div>
+          <select id="filterPrinterService" onchange="filterPrinters()" class="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-medium text-slate-700">
+            <option value="ALL">Tous types d'impression & finitions</option>
+            <option value="express">Express 24h</option>
+            <option value="dorure">Finition Dorure à chaud / Vernis</option>
+            <option value="papiers">Papiers texturés & 350g/400g</option>
+          </select>
+        </div>
+        <div class="text-xs text-slate-500 flex items-center bg-orange-50/70 p-2.5 rounded-xl border border-orange-200/60">
+          <i class="fa-solid fa-circle-check text-kart-orange mr-2"></i>
+          <span>Commission plateforme : <strong>1% par commande</strong> de mise en contact.</span>
+        </div>
+      </div>
+
+      <div id="printersListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rempli par renderPrintersList() -->
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 5 : COMPTE CRÉATIF & PACKS DE CRÉDITS -->
+    <!-- ============================================================ -->
+    <section id="view-pricing" class="view-section hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="text-xs uppercase font-extrabold text-kart-orange tracking-wider">Pour Graphistes & Agences</span>
+        <h2 class="text-3xl font-black text-kart-black mt-1">Packs de Crédits Compte Créatif</h2>
+        <p class="text-slate-600 mt-2">Vous créez régulièrement des cartes pour vos clients ? Achetez vos crédits prépayés et générez vos fichiers sans devoir effectuer un paiement mobile à chaque fois.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold uppercase text-slate-500 mb-2">Pack Découverte</div>
+            <h3 class="text-xl font-extrabold text-kart-black">Starter 30</h3>
+            <div class="my-4">
+              <span class="text-3xl font-black text-slate-900">10 000</span>
+              <span class="text-xs text-slate-500 font-bold">FCFA</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">Soit ~333 FCFA / carte</div>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Idéal pour les indépendants ayant des demandes ponctuelles.</p>
+            <div class="text-xs font-semibold text-kart-orange flex items-center gap-1.5"><i class="fa-solid fa-coins"></i> 30 Crédits de création</div>
+          </div>
+          <button onclick="buyCreditPack('Starter', 30, 10000)" class="mt-6 w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition">
+            Acheter ce pack
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border-2 border-kart-orange shadow-lg flex flex-col justify-between relative">
+          <div class="absolute -top-3 right-4 bg-kart-orange text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">Recommandé</div>
+          <div>
+            <div class="text-xs font-bold uppercase text-kart-orange mb-2">Pack Recommandé</div>
+            <h3 class="text-xl font-extrabold text-kart-black">Créatif 100</h3>
+            <div class="my-4">
+              <span class="text-3xl font-black text-kart-orange">30 000</span>
+              <span class="text-xs text-slate-500 font-bold">FCFA</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">Soit 300 FCFA / carte</div>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Le pack officiel mentionné dans le cahier des charges.</p>
+            <div class="text-xs font-semibold text-kart-orange flex items-center gap-1.5"><i class="fa-solid fa-coins"></i> 100 Crédits de création</div>
+          </div>
+          <button onclick="buyCreditPack('Créatif', 100, 30000)" class="mt-6 w-full py-2.5 bg-kart-orange hover:bg-kart-darkorange text-white text-xs font-bold rounded-xl shadow transition">
+            Acheter ce pack
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold uppercase text-slate-500 mb-2">Pack Pro</div>
+            <h3 class="text-xl font-extrabold text-kart-black">Pro 250</h3>
+            <div class="my-4">
+              <span class="text-3xl font-black text-slate-900">65 000</span>
+              <span class="text-xs text-slate-500 font-bold">FCFA</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">Soit 260 FCFA / carte</div>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Conçu pour les imprimeries et studios de production graphique.</p>
+            <div class="text-xs font-semibold text-kart-orange flex items-center gap-1.5"><i class="fa-solid fa-coins"></i> 250 Crédits de création</div>
+          </div>
+          <button onclick="buyCreditPack('Pro', 250, 65000)" class="mt-6 w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition">
+            Acheter ce pack
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold uppercase text-slate-500 mb-2">Grand Compte</div>
+            <h3 class="text-xl font-extrabold text-kart-black">Business 500</h3>
+            <div class="my-4">
+              <span class="text-3xl font-black text-slate-900">120 000</span>
+              <span class="text-xs text-slate-500 font-bold">FCFA</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">Soit 240 FCFA / carte</div>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Volume maximum au tarif le plus bas pour grands comptes.</p>
+            <div class="text-xs font-semibold text-kart-orange flex items-center gap-1.5"><i class="fa-solid fa-coins"></i> 500 Crédits de création</div>
+          </div>
+          <button onclick="buyCreditPack('Business', 500, 120000)" class="mt-6 w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition">
+            Acheter ce pack
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 6 : ESPACE ADMINISTRATEUR COMPLET -->
+    <!-- ============================================================ -->
+    <section id="view-admin" class="view-section hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div>
+          <span class="text-xs uppercase font-extrabold text-kart-orange tracking-wider">Console d'Administration</span>
+          <h2 class="text-3xl font-black text-kart-black">Gestion Plateforme My KARTpro</h2>
+          <p class="text-sm text-slate-500">Ajustez le prix des modèles en temps réel, ajoutez de nouvelles maquettes, supprimez les modèles obsolètes et suivez les commissions.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Passerelle API : saspay.me En Ligne
+          </span>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 my-8">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="text-xs font-bold text-slate-400 uppercase">Chiffre d'Affaires Cartes</div>
+          <div class="text-2xl font-black text-kart-black mt-1" id="adminKpiRevenue">1 425 000 FCFA</div>
+          <div class="text-[11px] text-emerald-600 font-semibold mt-1">↑ 18% ce mois-ci</div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="text-xs font-bold text-slate-400 uppercase">Abonnements Imprimeries</div>
+          <div class="text-2xl font-black text-kart-orange mt-1" id="adminKpiAgenciesRevenue">180 000 FCFA</div>
+          <div class="text-[11px] text-slate-500 font-semibold mt-1">12 agences inscrites (15 000 F/m)</div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="text-xs font-bold text-slate-400 uppercase">Commissions Plateforme (1%)</div>
+          <div class="text-2xl font-black text-emerald-600 mt-1" id="adminKpiCommissions">48 500 FCFA</div>
+          <div class="text-[11px] text-slate-500 font-semibold mt-1">Sur 4 850 000 F de volume d'impression</div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="text-xs font-bold text-slate-400 uppercase">Modèles Actifs</div>
+          <div class="text-2xl font-black text-slate-900 mt-1" id="adminKpiModelsCount">9</div>
+          <div class="text-[11px] text-slate-500 font-semibold mt-1">Designs officiels conservés</div>
+        </div>
+      </div>
+
+      <!-- Admin Tab Navigation -->
+      <div class="flex border-b border-slate-200 text-sm font-bold mb-6">
+        <button onclick="setAdminSubTab('prices')" id="adminSubBtn-prices" class="admin-tab-btn active px-4 py-2.5 border-b-2 border-kart-orange text-kart-orange">
+          <i class="fa-solid fa-tag mr-2"></i>Gestion des Prix & Modèles
+        </button>
+        <button onclick="setAdminSubTab('agencies')" id="adminSubBtn-agencies" class="admin-tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+          <i class="fa-solid fa-building mr-2"></i>Imprimeries (15 000 F/mois)
+        </button>
+        <button onclick="setAdminSubTab('saspay')" id="adminSubBtn-saspay" class="admin-tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+          <i class="fa-solid fa-money-bill-transfer mr-2"></i>API saspay.me & Webhooks
+        </button>
+      </div>
+
+      <!-- SOUS-ONGLET 1 : GESTION DES PRIX ET DES MODÈLES (L'ADMIN A LE PLEIN POUVOIR) -->
+      <div id="adminTabContent-prices" class="space-y-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <h3 class="text-base font-extrabold text-kart-black">Modification Globale des Prix par Gamme</h3>
+              <p class="text-xs text-slate-500">L'administrateur peut réajuster instantanément le tarif des 3 gammes de modèles.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openNewModelModal()" class="px-4 py-2 bg-gradient-to-r from-kart-orange to-kart-darkorange hover:opacity-95 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>Téléverser un Nouveau Modèle</span>
+              </button>
+              <button onclick="saveGlobalPrices()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow transition">
+                Enregistrer les Prix
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Gamme Essentiel (FCFA)</label>
+              <input type="number" id="adminPriceEssentiel" value="2500" step="100" class="w-full text-base font-bold p-2.5 border rounded-lg focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              <span class="text-[11px] text-slate-400 mt-1 block">Modèles sobres et rapides</span>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Gamme Standard (FCFA)</label>
+              <input type="number" id="adminPriceStandard" value="3500" step="100" class="w-full text-base font-bold p-2.5 border rounded-lg focus:ring-2 focus:ring-kart-orange focus:outline-none text-kart-orange">
+              <span class="text-[11px] text-slate-400 mt-1 block">Design élaboré + ajout Logo</span>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Gamme Professionnel (FCFA)</label>
+              <input type="number" id="adminPriceProfessionnel" value="5000" step="100" class="w-full text-base font-bold p-2.5 border rounded-lg focus:ring-2 focus:ring-kart-orange focus:outline-none">
+              <span class="text-[11px] text-slate-400 mt-1 block">Finition luxe, photos de produits & traiteur</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau des modèles individuels avec prix modifiables et suppression -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 class="text-sm font-extrabold text-kart-black">Catalogue des modèles & Gestion du cycle de vie</h4>
+              <p class="text-xs text-slate-500">Ajustez le prix individuel ou supprimez les modèles jugés obsolètes.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="resetModelsToDefault()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Restaurer la bibliothèque d'origine">
+                <i class="fa-solid fa-rotate-left text-slate-500"></i>
+                <span>Restaurer par défaut</span>
+              </button>
+              <button onclick="openNewModelModal()" class="px-3.5 py-1.5 bg-kart-orange hover:bg-kart-darkorange text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Nouveau Modèle</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="px-5 py-3">Aperçu</th>
+                  <th class="px-5 py-3">Nom du Modèle</th>
+                  <th class="px-5 py-3">Gamme</th>
+                  <th class="px-5 py-3">Secteur</th>
+                  <th class="px-5 py-3">Orientation</th>
+                  <th class="px-5 py-3">Prix Actuel (FCFA)</th>
+                  <th class="px-5 py-3">Statut</th>
+                  <th class="px-5 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminModelsTableBody" class="divide-y divide-slate-100">
+                <!-- Rempli par renderAdminModelsTable() -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOUS-ONGLET 2 : IMPRIMERIES & ABONNEMENTS -->
+      <div id="adminTabContent-agencies" class="space-y-6 hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <div>
+              <h3 class="text-base font-extrabold text-kart-black">Réseau d'Imprimeries Partenaires (Abonnement 15 000 FCFA/mois)</h3>
+              <p class="text-xs text-slate-500">Suivi des abonnements mensuels et des commissions perçues de 1% sur chaque mise en contact.</p>
+            </div>
+            <button onclick="openAgencyRegisterModal()" class="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800">
+              + Ajouter une imprimerie
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 font-extrabold uppercase text-[10px] tracking-wider border-b">
+                <tr>
+                  <th class="px-4 py-3">Imprimerie</th>
+                  <th class="px-4 py-3">Localisation</th>
+                  <th class="px-4 py-3">Contact</th>
+                  <th class="px-4 py-3">Abonnement Mensuel</th>
+                  <th class="px-4 py-3">Volume Estimé</th>
+                  <th class="px-4 py-3">Commissions (1%)</th>
+                  <th class="px-4 py-3">Statut</th>
+                </tr>
+              </thead>
+              <tbody id="adminAgenciesTableBody" class="divide-y divide-slate-100">
+                <!-- Rempli par renderAdminAgenciesTable() -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOUS-ONGLET 3 : CONFIGURATION API SASPAY.ME -->
+      <div id="adminTabContent-saspay" class="space-y-6 hidden">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="text-base font-extrabold text-kart-black mb-1">Configuration Opérateur Passerelle : saspay.me</h3>
+          <p class="text-xs text-slate-500 mb-6">Paramètres d'API et webhooks sécurisés pour les encaissements Orange Money / Moov Money au Burkina Faso.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Passerelle API Endpoint</label>
+              <input type="text" readonly value="https://api.saspay.me/v1/checkout/initialize" class="w-full p-2.5 bg-slate-100 border rounded-lg text-slate-600 font-mono text-[11px]">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Clé Publique SasPay (Public Key)</label>
+              <input type="text" value="sp_live_9b4e883bfca_mykartpro_bf" class="w-full p-2.5 border rounded-lg font-mono text-[11px]">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Devise de transaction</label>
+              <input type="text" readonly value="XOF (Franc CFA BCEAO)" class="w-full p-2.5 bg-slate-100 border rounded-lg text-slate-600 font-semibold">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Webhook URL de confirmation</label>
+              <input type="text" readonly value="https://mykartpro.bf/api/saspay/callback" class="w-full p-2.5 bg-slate-100 border rounded-lg text-slate-600 font-mono text-[11px]">
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t flex justify-between items-center">
+            <span class="text-xs text-emerald-600 font-semibold flex items-center gap-1.5">
+              <i class="fa-solid fa-check-double"></i> Connexion API saspay.me active et vérifiée
+            </span>
+            <button onclick="showToast('Configuration saspay.me mise à jour !', 'success')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">Sauvegarder les clés</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- MODAL DE PAIEMENT SASPAY.ME (ORANGE MONEY / MOOV / CARTE) -->
+  <!-- ============================================================ -->
+  <div id="paymentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+      
+      <button onclick="closePaymentModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center pb-4 border-b border-slate-100">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-kart-orange text-[11px] font-black uppercase mb-2">
+          <i class="fa-solid fa-shield-halved"></i> Passerelle saspay.me sécurisée
+        </div>
+        <h3 class="text-xl font-extrabold text-kart-black">Règlement de votre commande</h3>
+        <p class="text-xs text-slate-500 mt-1">Déblocage instantané des fichiers PDF 300 DPI, JPG & PNG.</p>
+      </div>
+
+      <!-- Récapitulatif Tarifaire -->
+      <div class="my-5 p-4 bg-slate-50 rounded-2xl border border-slate-200 flex justify-between items-center">
+        <div>
+          <div id="modalOrderModelName" class="text-sm font-black text-slate-900">Modèle Sélectionné</div>
+          <div class="text-xs text-slate-500">Génération certifiée haute définition</div>
+        </div>
+        <div class="text-right">
+          <div id="modalOrderAmount" class="text-2xl font-black text-kart-orange">3 500</div>
+          <div class="text-[10px] text-slate-400 font-bold uppercase">FCFA TTC</div>
+        </div>
+      </div>
+
+      <!-- Méthodes de Paiement (Orange Money Burkina Faso, Moov Money, Carte) -->
+      <div class="space-y-3">
+        <label class="block text-xs font-bold text-slate-700">Choisissez votre moyen de paiement :</label>
+
+        <label class="flex items-center justify-between p-3.5 border-2 border-kart-orange rounded-xl bg-orange-50/40 cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input type="radio" name="paymentProvider" value="orange" checked class="text-kart-orange focus:ring-kart-orange">
+            <div>
+              <div class="text-xs font-bold text-slate-900">Orange Money Burkina Faso</div>
+              <div class="text-[10px] text-slate-500">Paiement direct par code OTP ou notification</div>
+            </div>
+          </div>
+          <span class="w-6 h-6 rounded-full bg-[#FF6600] text-white flex items-center justify-center text-[10px] font-black">OM</span>
+        </label>
+
+        <label class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-slate-300 cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input type="radio" name="paymentProvider" value="moov" class="text-kart-orange focus:ring-kart-orange">
+            <div>
+              <div class="text-xs font-bold text-slate-900">Moov Money Burkina Faso</div>
+              <div class="text-[10px] text-slate-500">Validation instantanée sur votre compte</div>
+            </div>
+          </div>
+          <span class="w-6 h-6 rounded-full bg-[#0055A5] text-white flex items-center justify-center text-[10px] font-black">MM</span>
+        </label>
+
+        <label class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-slate-300 cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input type="radio" name="paymentProvider" value="card" class="text-kart-orange focus:ring-kart-orange">
+            <div>
+              <div class="text-xs font-bold text-slate-900">Carte Visa / Mastercard</div>
+              <div class="text-[10px] text-slate-500">Paiement international sécurisé</div>
+            </div>
+          </div>
+          <i class="fa-regular fa-credit-card text-slate-500 text-lg"></i>
+        </label>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-xs font-bold text-slate-700 mb-1">Numéro Mobile Money (+226)</label>
+        <div class="relative">
+          <span class="absolute left-3 top-2.5 text-xs text-slate-500 font-bold">+226</span>
+          <input type="tel" id="mobileMoneyPhone" placeholder="70 00 00 00" value="70 00 00 00" class="w-full pl-14 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-bold">
+        </div>
+      </div>
+
+      <button onclick="processSaspayPayment()" id="btnSubmitPayment" class="mt-6 w-full py-3.5 bg-kart-orange hover:bg-kart-darkorange text-white text-sm font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-lock"></i>
+        <span>Payer via saspay.me</span>
+      </button>
+
+      <p class="text-center text-[10px] text-slate-400 mt-3 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-lock text-[9px]"></i> Cryptage SSL 256 bits • Reçu certifié avec QR Code
+      </p>
+
+    </div>
+  </div>
+
+  <!-- MODAL D'INSCRIPTION IMPRIMERIE (15 000 FCFA / MOIS) -->
+  <div id="agencyRegisterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
+      
+      <button onclick="closeAgencyRegisterModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center pb-4 border-b border-slate-100">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-kart-orange/10 text-kart-orange text-[11px] font-black uppercase mb-1">
+          Réseau Partenaire My KARTpro
+        </div>
+        <h3 class="text-xl font-extrabold text-kart-black">Inscription Imprimerie & Agence</h3>
+        <p class="text-xs text-slate-500 mt-1">Rejoignez le canal d'acquisition direct et recevez des commandes de clients à proximité.</p>
+      </div>
+
+      <div class="my-4 p-4 bg-orange-50 rounded-2xl border border-orange-200/70 text-xs space-y-2">
+        <div class="flex justify-between font-bold text-slate-900">
+          <span>Abonnement Mensuel de Référencement :</span>
+          <span class="text-kart-orange">15 000 FCFA / mois</span>
+        </div>
+        <div class="flex justify-between text-slate-600">
+          <span>Commission par mise en contact / transaction :</span>
+          <span class="font-bold text-slate-900">01% (Un pourcent)</span>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nom de l'Imprimerie / Agence</label>
+          <input type="text" id="agencyNameInput" placeholder="Ex: Faso Impression Express" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Ville</label>
+            <input type="text" id="agencyCityInput" placeholder="Ouagadougou" value="Ouagadougou" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Quartier / Adresse</label>
+            <input type="text" id="agencyDistrictInput" placeholder="Koulouba / Ouaga 2000" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Numéro Téléphone</label>
+            <input type="text" id="agencyPhoneInput" placeholder="+226 70 00 00 00" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Numéro WhatsApp Commercial</label>
+            <input type="text" id="agencyWhatsappInput" placeholder="+226 76 00 00 00" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Services & Finitions proposés</label>
+          <input type="text" id="agencyServicesInput" placeholder="Impression offset, numérique express 24h, vernis sélectif, 350g" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+        </div>
+      </div>
+
+      <button onclick="submitAgencyRegistration()" class="mt-6 w-full py-3 bg-kart-orange hover:bg-kart-darkorange text-white text-xs font-bold rounded-xl shadow transition">
+        Valider l'adhésion & Activer l'Abonnement (15 000 FCFA)
+      </button>
+
+    </div>
+  </div>
+
+  <!-- MODAL D'AJOUT / TÉLÉVERSEMENT DE NOUVEAU MODÈLE PAR L'ADMIN -->
+  <div id="newModelModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 max-h-[90vh] overflow-y-auto">
+      
+      <button onclick="closeNewModelModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center pb-4 border-b border-slate-100">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-kart-orange/10 text-kart-orange text-[11px] font-black uppercase mb-1">
+          <i class="fa-solid fa-palette"></i> Administration Catalogue
+        </div>
+        <h3 class="text-xl font-extrabold text-kart-black">Téléverser / Créer un Nouveau Modèle</h3>
+        <p class="text-xs text-slate-500 mt-1">Configurez les caractéristiques, importez vos maquettes de fond ou choisissez un style de design.</p>
+      </div>
+
+      <form id="newModelForm" onsubmit="handleNewModelSubmit(event)" class="space-y-4 mt-5 text-xs">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nom du Modèle *</label>
+            <input type="text" id="newModelName" required placeholder="Ex: Modèle Tech Futuriste" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Référence / Fichier source</label>
+            <input type="text" id="newModelRef" placeholder="Réf : custom-admin" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Gamme *</label>
+            <select id="newModelTier" onchange="updateNewModelDefaultPrice()" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-semibold">
+              <option value="Essentiel">Essentiel</option>
+              <option value="Standard" selected>Standard</option>
+              <option value="Professionnel">Professionnel</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Secteur *</label>
+            <select id="newModelSector" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-semibold">
+              <option value="corporate">Entreprise & Conseil</option>
+              <option value="tech">Tech & Digital</option>
+              <option value="sante">Santé & Médical</option>
+              <option value="btp">Restauration & Traiteur</option>
+              <option value="luxe">Mode, Tissus & Luxe</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Orientation *</label>
+            <select id="newModelOrientation" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-semibold">
+              <option value="horizontal">Horizontal (85x55)</option>
+              <option value="vertical">Vertical (55x85)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Prix en FCFA *</label>
+            <input type="number" id="newModelPrice" required value="3500" step="100" class="w-full p-2.5 border rounded-xl font-bold text-kart-orange focus:ring-2 focus:ring-kart-orange focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Structure Visuelle / Design de référence</label>
+          <select id="newModelLayout" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none font-semibold">
+            <option value="green-wave">Modèle 01 : Tech Vert Lime & QR Code</option>
+            <option value="soft-mint-curve">Modèle 02 : Écure Ovale Menthe & Nude</option>
+            <option value="medical-care">Modèle 03 : Centre Médical & Soins</option>
+            <option value="mint-creative">Modèle 04 : Studio Minimal Cyan Menthe</option>
+            <option value="red-hex-corporate">Modèle 05 : Bicolore Noir, Rouge & Losange</option>
+            <option value="orange-tab-media">Modèle 06 : Ruban Orange Vertical & QR</option>
+            <option value="dreampix-origami">Modèle 07 : Origami Tech Orange & Anthracite</option>
+            <option value="fabrics-showcase">Modèle 08 : Vitrine Produits & Mode</option>
+            <option value="gourmet-catering">Modèle 09 : Gastronomie, Traiteur & Restauration</option>
+          </select>
+        </div>
+
+        <!-- Téléversement des Maquettes / Arrière-plans d'images (Recto & Verso) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+            <label class="block font-bold text-slate-700 mb-1">
+              <i class="fa-solid fa-image text-kart-orange mr-1"></i>Maquette Fond Recto (Image)
+            </label>
+            <input type="file" id="newModelFrontFile" accept="image/*" onchange="handleModelBgUpload(event, 'front')" class="text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-kart-orange file:text-white hover:file:opacity-90">
+            <div id="newModelFrontPreview" class="mt-2 h-16 w-full rounded-lg border bg-slate-200 overflow-hidden flex items-center justify-center text-slate-400 text-[10px]">
+              <span>Aucune image importée (fond vectoriel officiel)</span>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+            <label class="block font-bold text-slate-700 mb-1">
+              <i class="fa-solid fa-image text-kart-orange mr-1"></i>Maquette Fond Verso (Optionnel)
+            </label>
+            <input type="file" id="newModelBackFile" accept="image/*" onchange="handleModelBgUpload(event, 'back')" class="text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-slate-800 file:text-white hover:file:opacity-90">
+            <div id="newModelBackPreview" class="mt-2 h-16 w-full rounded-lg border bg-slate-200 overflow-hidden flex items-center justify-center text-slate-400 text-[10px]">
+              <span>Aucune image importée</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Couleur Fond</label>
+            <input type="color" id="newModelBgColor" value="#FFFFFF" class="w-full h-8 p-0.5 border rounded-lg cursor-pointer">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Couleur d'Accent</label>
+            <input type="color" id="newModelAccentColor" value="#F37021" class="w-full h-8 p-0.5 border rounded-lg cursor-pointer">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Couleur Texte</label>
+            <input type="color" id="newModelTextColor" value="#1E293B" class="w-full h-8 p-0.5 border rounded-lg cursor-pointer">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Description concise du modèle</label>
+          <textarea id="newModelDesc" rows="2" placeholder="Description du style et des secteurs ciblés..." class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-kart-orange focus:outline-none"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeNewModelModal()" class="px-4 py-2.5 text-slate-600 hover:text-slate-900 font-bold">Annuler</button>
+          <button type="submit" class="px-5 py-2.5 bg-kart-orange hover:bg-kart-darkorange text-white font-bold rounded-xl shadow transition flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Publier dans le Catalogue</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMATION DE SUPPRESSION DE MODÈLE OBSOLÈTE -->
+  <div id="deleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-slate-100 text-center animate-in fade-in zoom-in-95 duration-200">
+      <div class="w-14 h-14 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl mb-4">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h3 class="text-lg font-extrabold text-slate-900">Confirmer la suppression ?</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-5" id="deleteConfirmModelText">
+        Êtes-vous sûr de vouloir retirer ce modèle du catalogue ?
+      </p>
+      <div class="grid grid-cols-2 gap-3 text-xs font-bold">
+        <button onclick="closeDeleteConfirmModal()" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
+          Annuler
+        </button>
+        <button onclick="executeModelDeletion()" class="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow transition">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FOOTER -->
+  <!-- ============================================================ -->
+  <footer class="bg-kart-dark text-slate-400 text-xs border-t border-slate-800 mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 text-white font-extrabold text-lg">
+            <span>My KART</span><span class="text-kart-orange">pro</span>
+          </div>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            La solution web SaaS professionnelle de création de cartes de visite et de mise en relation avec les imprimeurs au Burkina Faso.
+          </p>
+          <div class="text-[11px] text-slate-500">
+            Hébergement officiel : <strong>GitHub Pages</strong><br>
+            Opérateur de paiement : <strong>saspay.me</strong>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-white font-bold text-sm mb-3">Tarification à l'acte</h4>
+          <ul class="space-y-2">
+            <li><span class="text-white font-semibold">Essentiel</span> : 2 500 FCFA</li>
+            <li><span class="text-white font-semibold">Standard</span> : 3 500 FCFA</li>
+            <li><span class="text-white font-semibold">Professionnel</span> : 5 000 FCFA</li>
+            <li class="pt-2 text-slate-500">Sans abonnement pour le grand public.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-white font-bold text-sm mb-3">Imprimeries Partenaires</h4>
+          <ul class="space-y-2">
+            <li>Adhésion mensuelle : 15 000 FCFA / mois</li>
+            <li>Commission par mise en relation : 1%</li>
+            <li>Ouagadougou • Bobo-Dioulasso • Koudougou</li>
+            <li><a href="#printers" onclick="navTo('printers')" class="text-kart-orange hover:underline">Consulter les imprimeries</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-white font-bold text-sm mb-3">Sécurité & Conformité</h4>
+          <p class="text-slate-400 mb-2">Paiement sécurisé saspay.me certifié Orange Money & Moov Money Burkina Faso.</p>
+          <div class="flex items-center gap-2 text-kart-orange font-bold text-xs">
+            <i class="fa-solid fa-lock"></i> 100% Transactions Protégées
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-8 pt-8 border-t border-slate-800 text-center text-slate-500 text-[11px] flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>© 2026 My KARTpro. Tous droits réservés. Font : Century Gothic.</div>
+        <div class="flex gap-4">
+          <a href="#" class="hover:text-slate-300">Conditions Générales de Vente</a>
+          <a href="#" class="hover:text-slate-300">Confidentialité</a>
+          <a href="#" class="hover:text-slate-300">Support Client</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================ -->
+  <!-- JAVASCRIPT LOGIQUE COMPLÈTE APPLICATIVE -->
+  <!-- ============================================================ -->
+  <script>
+    /**
+     * LES 9 MODÈLES EXACTS ISSUS DES IMAGES FOURNIES PAR L'UTILISATEUR
+     * Toutes les informations textuelles sont 100% neutres.
+     */
+    const DEFAULT_MODELS = [
+      {
+        id: 'model-green-wave',
+        name: 'Modèle 01 : Tech Vert Lime & QR Code',
+        reference: 'Réf : 084d857a',
+        tier: 'Standard',
+        sector: 'tech',
+        orientation: 'horizontal',
+        price: 3500,
+        bg: '#FFFFFF',
+        accent: '#5BB318',
+        text: '#1E293B',
+        layout: 'green-wave',
+        description: 'Biseau vert lime dynamique avec emplacement QR Code, coordonnées hiérarchisées et verso contrasté bleu marine.'
+      },
+      {
+        id: 'model-soft-mint-curve',
+        name: 'Modèle 02 : Écure Ovale Menthe & Nude',
+        reference: 'Réf : b6a6de5a',
+        tier: 'Essentiel',
+        sector: 'luxe',
+        orientation: 'horizontal',
+        price: 2500,
+        bg: '#FFFFFF',
+        accent: '#7EB5A6',
+        text: '#334155',
+        layout: 'soft-mint-curve',
+        description: 'Grand cartouche arrondi flottant sur onde menthe poudrée avec trame de points délicate. Idéal bien-être & esthétique.'
+      },
+      {
+        id: 'model-medical-care',
+        name: 'Modèle 03 : Centre Médical & Soins',
+        reference: 'Réf : 85154e68',
+        tier: 'Essentiel',
+        sector: 'sante',
+        orientation: 'horizontal',
+        price: 2500,
+        bg: '#FFFFFF',
+        accent: '#1D4ED8',
+        text: '#0F172A',
+        layout: 'medical-care',
+        description: 'Croix médicale bicolore bleu roi et vert d\'eau, mise en page épurée et verso contrasté dédié aux praticiens.'
+      },
+      {
+        id: 'model-mint-creative',
+        name: 'Modèle 04 : Studio Minimal Cyan Menthe',
+        reference: 'Réf : 8698f4eb',
+        tier: 'Standard',
+        sector: 'corporate',
+        orientation: 'horizontal',
+        price: 3500,
+        bg: '#38B2AC',
+        accent: '#FFFFFF',
+        text: '#FFFFFF',
+        layout: 'mint-creative',
+        description: 'Fond menthe lumineux avec typographie fine Century Gothic et verso blanc immaculé aux encoches géométriques.'
+      },
+      {
+        id: 'model-red-hex-corporate',
+        name: 'Modèle 05 : Bicolore Noir, Rouge & Losange',
+        reference: 'Réf : 1cefc186',
+        tier: 'Standard',
+        sector: 'corporate',
+        orientation: 'horizontal',
+        price: 3500,
+        bg: '#18181B',
+        accent: '#E11D48',
+        text: '#FFFFFF',
+        layout: 'red-hex-corporate',
+        description: 'Séparation bicolore franche noir et blanc avec bannière verticale rouge à icônes et verso à losange d\'identité.'
+      },
+      {
+        id: 'model-orange-tab-media',
+        name: 'Modèle 06 : Ruban Orange Vertical & QR',
+        reference: 'Réf : fc0f0a2b',
+        tier: 'Standard',
+        sector: 'tech',
+        orientation: 'horizontal',
+        price: 3500,
+        bg: '#FFFFFF',
+        accent: '#F59E0B',
+        text: '#1F2937',
+        layout: 'orange-tab-media',
+        description: 'Bandeau vertical orange à puces de contact, logo d\'entreprise et verso sombre rehaussé d\'un biseau solaire.'
+      },
+      {
+        id: 'model-dreampix-origami',
+        name: 'Modèle 07 : Origami Tech Orange & Anthracite',
+        reference: 'Réf : e952a26a',
+        tier: 'Professionnel',
+        sector: 'tech',
+        orientation: 'horizontal',
+        price: 5000,
+        bg: '#1F2421',
+        accent: '#F97316',
+        text: '#FFFFFF',
+        layout: 'dreampix-origami',
+        description: 'Onglet plié façon origami 3D orange, bloc sombre d\'adresses, encadré QR code et verso corporate plein.'
+      },
+      {
+        id: 'model-fabrics-showcase',
+        name: 'Modèle 08 : Vitrine Produits & Mode',
+        reference: 'Réf : 928f6697',
+        tier: 'Professionnel',
+        sector: 'luxe',
+        orientation: 'horizontal',
+        price: 5000,
+        bg: '#FFFFFF',
+        accent: '#EAB308',
+        text: '#1E293B',
+        layout: 'fabrics-showcase',
+        description: 'Galerie de 4 photos de produits/tissus intégrées au recto, typographie or et verso sombre avec liste de services.'
+      },
+      {
+        id: 'model-gourmet-catering',
+        name: 'Modèle 09 : Gastronomie, Traiteur & Restauration',
+        reference: 'Réf : 70bebcba / 4044cda3',
+        tier: 'Professionnel',
+        sector: 'btp',
+        orientation: 'horizontal',
+        price: 5000,
+        bg: '#FFFFFF',
+        accent: '#EA580C',
+        text: '#18181B',
+        layout: 'gourmet-catering',
+        description: 'Photos culinaires ou chantiers en bandeau diagonal, cadre épuré avec coordonnées et verso gourmand premium.'
+      }
+    ];
+
+    function loadSavedModels() {
+      try {
+        const saved = localStorage.getItem('mykartpro_models');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Erreur chargement LocalStorage:', e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_MODELS));
+    }
+
+    function saveModelsToStorage(modelsArray) {
+      try {
+        localStorage.setItem('mykartpro_models', JSON.stringify(modelsArray));
+      } catch (e) {
+        console.warn('Erreur sauvegarde LocalStorage:', e);
+      }
+    }
+
+    const APP_STATE = {
+      currentRole: 'client',
+      currentView: 'home',
+      currentSide: 'front',
+      showBleedGuide: false,
+      
+      tierPrices: {
+        Essentiel: 2500,
+        Standard: 3500,
+        Professionnel: 5000
+      },
+
+      selectedModel: null,
+      modelToDeleteId: null,
+
+      uploadedNewModelFrontBg: null,
+      uploadedNewModelBackBg: null,
+
+      cardData: {
+        nom: 'KABORE',
+        prenom: 'Alexandre',
+        fonction: 'Directeur Général',
+        entreprise: 'ENTREPRISE PRO',
+        slogan: "Solutions & Services Professionnels",
+        tel: '+226 70 00 00 00',
+        whatsapp: '+226 76 00 00 00',
+        email: 'contact@votre-domaine.bf',
+        site: 'www.votre-domaine.bf',
+        adresse: "Avenue Kwamé N'Krumah, Ouagadougou",
+        bgColor: '#FFFFFF',
+        accentColor: '#5BB318',
+        textColor: '#1E293B',
+        logoUrl: null,
+        photoUrl: null
+      },
+
+      models: loadSavedModels(),
+
+      printers: [
+        {
+          id: 'p-01',
+          name: 'Imprimerie Moderne du Centre',
+          city: 'Ouagadougou',
+          district: 'Koulouba',
+          phone: '+226 25 30 11 22',
+          whatsapp: '22670112233',
+          services: ['Express 24h', '350g Couché', 'Pelliculage Mat/Brillant'],
+          type: 'express',
+          rating: 4.9,
+          subscriptionPaid: true
+        },
+        {
+          id: 'p-02',
+          name: 'GraphiPro Ouaga 2000',
+          city: 'Ouagadougou',
+          district: 'Ouaga 2000 (Près du Monument)',
+          phone: '+226 25 37 44 55',
+          whatsapp: '22676445566',
+          services: ['Finition Dorure Or/Argent', 'Vernis Sélectif', 'Papier Kraft Texturé'],
+          type: 'dorure',
+          rating: 4.8,
+          subscriptionPaid: true
+        },
+        {
+          id: 'p-03',
+          name: 'Sya Print Express',
+          city: 'Bobo-Dioulasso',
+          district: 'Centre-Ville Commercial',
+          phone: '+226 20 97 88 99',
+          whatsapp: '22678889900',
+          services: ['Express 24h', 'Livraison Bobo & Banfora', 'Papiers texturés'],
+          type: 'express',
+          rating: 4.7,
+          subscriptionPaid: true
+        },
+        {
+          id: 'p-04',
+          name: 'Luxe Print & Finitions',
+          city: 'Ouagadougou',
+          district: 'Zone du Bois',
+          phone: '+226 25 36 10 01',
+          whatsapp: '22675100102',
+          services: ['Papiers 400g luxe', 'Gaufrage & Découpe sur-mesure'],
+          type: 'papiers',
+          rating: 5.0,
+          subscriptionPaid: true
+        }
+      ]
+    };
+
+    window.onload = function() {
+      APP_STATE.selectedModel = APP_STATE.models[0] || DEFAULT_MODELS[0];
+      
+      renderCatalogue();
+      renderPrintersList();
+      renderAdminModelsTable();
+      renderAdminAgenciesTable();
+      updateEditorUI();
+      updateCardPreview();
+      
+      console.log('My KARTpro - Application initialisée avec succès.');
+    };
+
+    function navTo(viewName) {
+      APP_STATE.currentView = viewName;
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
+      
+      const targetSec = document.getElementById('view-' + viewName);
+      if (targetSec) {
+        targetSec.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      document.querySelectorAll('.nav-link').forEach(btn => {
+        btn.classList.remove('text-kart-orange', 'bg-orange-50');
+      });
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function startQuickCreation() {
+      navTo('catalogue');
+      showToast('Sélectionnez un modèle ci-dessous pour démarrer la personnalisation.', 'info');
+    }
+
+    function switchRole(role) {
+      APP_STATE.currentRole = role;
+      
+      ['client', 'agency', 'admin'].forEach(r => {
+        const btn = document.getElementById('roleBtn-' + r);
+        if (btn) {
+          if (r === role) {
+            btn.className = "px-2.5 py-1.5 rounded-lg bg-white text-kart-orange font-bold shadow-sm transition";
+          } else {
+            btn.className = "px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-kart-black transition";
+          }
+        }
+      });
+
+      if (role === 'admin') {
+        navTo('admin');
+        showToast('Mode Administrateur activé : gestion des prix, modèles et commissions.', 'info');
+      } else if (role === 'agency') {
+        navTo('printers');
+        showToast('Mode Imprimerie Partenaire activé (Abonnement 15 000 FCFA/mois).', 'info');
+      } else {
+        navTo('catalogue');
+        showToast('Mode Client activé : création et achat à l\'acte.', 'info');
+      }
+    }
+
+    function setAdminSubTab(tabKey) {
+      ['prices', 'agencies', 'saspay'].forEach(key => {
+        const content = document.getElementById('adminTabContent-' + key);
+        const btn = document.getElementById('adminSubBtn-' + key);
+        if (content && btn) {
+          if (key === tabKey) {
+            content.classList.remove('hidden');
+            btn.className = "admin-tab-btn active px-4 py-2.5 border-b-2 border-kart-orange text-kart-orange font-bold";
+          } else {
+            content.classList.add('hidden');
+            btn.className = "admin-tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold";
+          }
+        }
+      });
+    }
+
+    function renderCatalogue() {
+      const container = document.getElementById('modelsGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const searchVal = (document.getElementById('searchModelInput')?.value || '').toLowerCase().trim();
+      const tierFilter = document.getElementById('filterTier')?.value || 'ALL';
+      const sectorFilter = document.getElementById('filterSector')?.value || 'ALL';
+      const orientFilter = document.getElementById('filterOrientation')?.value || 'ALL';
+
+      const filtered = APP_STATE.models.filter(m => {
+        const matchesSearch = !searchVal || 
+          m.name.toLowerCase().includes(searchVal) || 
+          (m.description && m.description.toLowerCase().includes(searchVal)) ||
+          (m.sector && m.sector.toLowerCase().includes(searchVal));
+
+        const matchesTier = (tierFilter === 'ALL' || m.tier === tierFilter);
+        const matchesSector = (sectorFilter === 'ALL' || m.sector === sectorFilter);
+        const matchesOrient = (orientFilter === 'ALL' || m.orientation === orientFilter);
+
+        return matchesSearch && matchesTier && matchesSector && matchesOrient;
+      });
+
+      const countBadge = document.getElementById('filteredCount');
+      if (countBadge) countBadge.innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-16 text-center text-slate-400">
+            <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
+            <p class="text-sm font-semibold">Aucun modèle ne correspond à vos filtres.</p>
+            <button onclick="resetCatalogueFilters()" class="mt-3 px-4 py-2 bg-kart-orange text-white text-xs font-bold rounded-xl shadow">Réinitialiser les filtres</button>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const cardCol = document.createElement('div');
+        cardCol.className = "bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group";
+
+        const previewData = {
+          nom: 'KABORE',
+          prenom: 'Alexandre',
+          fonction: 'Directeur Général',
+          entreprise: 'ENTREPRISE PRO',
+          slogan: 'Solutions & Services',
+          tel: '+226 70 00 00 00',
+          whatsapp: '+226 76 00 00 00',
+          email: 'contact@votre-domaine.bf',
+          site: 'www.votre-domaine.bf',
+          adresse: 'Ouagadougou, BF',
+          bgColor: m.bg,
+          accentColor: m.accent,
+          textColor: m.text,
+          frontBgImage: m.frontBgImage || null,
+          backBgImage: m.backBgImage || null
+        };
+
+        const markupFront = getCardHtmlMarkup(m.layout, 'front', previewData, true);
+
+        cardCol.innerHTML = `
+          <div class="p-3 bg-slate-100/70 border-b border-slate-100 flex items-center justify-center overflow-hidden">
+            <div class="w-full ${m.orientation === 'vertical' ? 'aspect-business-card-vert max-w-[170px]' : 'aspect-business-card'} rounded-xl shadow-md overflow-hidden relative group-hover:scale-102 transition duration-300">
+              ${markupFront}
+            </div>
+          </div>
+
+          <div class="p-4 flex-grow flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                  m.tier === 'Professionnel' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                  m.tier === 'Standard' ? 'bg-orange-100 text-kart-orange border border-orange-300' :
+                  'bg-slate-100 text-slate-700'
+                }">${m.tier}</span>
+                <span class="text-[10px] text-slate-400 capitalize flex items-center gap-1 font-semibold">
+                  <i class="fa-solid fa-tag text-[9px]"></i>${m.sector}
+                </span>
+              </div>
+
+              <h4 class="font-extrabold text-sm text-slate-900 leading-snug group-hover:text-kart-orange transition">${m.name}</h4>
+              <p class="text-xs text-slate-500 mt-1 line-clamp-2">${m.description || 'Modèle professionnel prêt à imprimer ou à partager.'}</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">Tarif unique</span>
+                <div class="text-lg font-black text-kart-orange">
+                  ${m.price.toLocaleString('fr-FR')} <span class="text-xs font-bold text-slate-700">FCFA</span>
+                </div>
+              </div>
+              <button onclick="selectModelForEditor('${m.id}')" class="px-3.5 py-2 bg-slate-900 group-hover:bg-kart-orange text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+                <span>Personnaliser</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(cardCol);
+      });
+    }
+
+    function applyFilters() {
+      renderCatalogue();
+    }
+
+    function filterByTier(tierName) {
+      navTo('catalogue');
+      const sel = document.getElementById('filterTier');
+      if (sel) {
+        sel.value = tierName;
+        renderCatalogue();
+      }
+    }
+
+    function resetCatalogueFilters() {
+      const search = document.getElementById('searchModelInput');
+      const t = document.getElementById('filterTier');
+      const s = document.getElementById('filterSector');
+      const o = document.getElementById('filterOrientation');
+      if (search) search.value = '';
+      if (t) t.value = 'ALL';
+      if (s) s.value = 'ALL';
+      if (o) o.value = 'ALL';
+      renderCatalogue();
+    }
+
+    function selectModelForEditor(modelId) {
+      const found = APP_STATE.models.find(m => m.id === modelId);
+      if (found) {
+        APP_STATE.selectedModel = found;
+        APP_STATE.cardData.bgColor = found.bg;
+        APP_STATE.cardData.accentColor = found.accent;
+        APP_STATE.cardData.textColor = found.text;
+
+        updateEditorUI();
+        updateCardPreview();
+        navTo('editor');
+        showToast(`Modèle "${found.name}" chargé dans le studio éditeur.`, 'info');
+      }
+    }
+
+    function updateEditorUI() {
+      const m = APP_STATE.selectedModel;
+      if (!m) return;
+
+      const titleEl = document.getElementById('editorModelName');
+      const badgeEl = document.getElementById('editorModelBadge');
+      const priceEl = document.getElementById('editorModelPrice');
+
+      if (titleEl) titleEl.innerText = m.name;
+      if (badgeEl) badgeEl.innerText = m.tier;
+      if (priceEl) priceEl.innerText = m.price.toLocaleString('fr-FR');
+
+      const bgPicker = document.getElementById('colorPickerBg');
+      const accentPicker = document.getElementById('colorPickerAccent');
+      if (bgPicker) bgPicker.value = APP_STATE.cardData.bgColor || m.bg;
+      if (accentPicker) accentPicker.value = APP_STATE.cardData.accentColor || m.accent;
+    }
+
+    function setEditorTab(tabKey) {
+      ['textes', 'media', 'style'].forEach(k => {
+        const content = document.getElementById('editorTab-' + k);
+        const btn = document.getElementById('tabBtn-' + k);
+        if (content && btn) {
+          if (k === tabKey) {
+            content.classList.remove('hidden');
+            btn.className = "editor-tab-btn active px-4 py-2.5 border-b-2 border-kart-orange text-kart-orange font-bold";
+          } else {
+            content.classList.add('hidden');
+            btn.className = "editor-tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold";
+          }
+        }
+      });
+    }
+
+    function flipCardSide(side) {
+      APP_STATE.currentSide = side;
+      const card = document.getElementById('interactiveCard');
+      const btnF = document.getElementById('sideBtn-front');
+      const btnB = document.getElementById('sideBtn-back');
+
+      if (side === 'back') {
+        if (card) card.style.transform = 'rotateY(180deg)';
+        if (btnB) btnB.className = "px-3 py-1 rounded-full bg-kart-orange text-white font-bold";
+        if (btnF) btnF.className = "px-3 py-1 rounded-full text-slate-600 hover:text-slate-900 font-bold";
+      } else {
+        if (card) card.style.transform = 'rotateY(0deg)';
+        if (btnF) btnF.className = "px-3 py-1 rounded-full bg-kart-orange text-white font-bold";
+        if (btnB) btnB.className = "px-3 py-1 rounded-full text-slate-600 hover:text-slate-900 font-bold";
+      }
+    }
+
+    function toggleCardFlip() {
+      if (APP_STATE.currentSide === 'front') {
+        flipCardSide('back');
+      } else {
+        flipCardSide('front');
+      }
+    }
+
+    function toggleBleedGuide() {
+      APP_STATE.showBleedGuide = !APP_STATE.showBleedGuide;
+      const front = document.getElementById('cardFaceFront');
+      const back = document.getElementById('cardFaceBack');
+      const btn = document.getElementById('bleedGuideBtn');
+
+      if (APP_STATE.showBleedGuide) {
+        if (front) front.classList.add('print-bleed-guide');
+        if (back) back.classList.add('print-bleed-guide');
+        if (btn) btn.classList.add('text-kart-orange', 'font-bold');
+        showToast('Repères de coupe et marges de sécurité activés (300 DPI).', 'info');
+      } else {
+        if (front) front.classList.remove('print-bleed-guide');
+        if (back) back.classList.remove('print-bleed-guide');
+        if (btn) btn.classList.remove('text-kart-orange', 'font-bold');
+      }
+    }
+
+    function updateCardPreview() {
+      APP_STATE.cardData.nom = document.getElementById('inputNom')?.value || 'KABORE';
+      APP_STATE.cardData.prenom = document.getElementById('inputPrenom')?.value || 'Alexandre';
+      APP_STATE.cardData.fonction = document.getElementById('inputFonction')?.value || 'Directeur Général';
+      APP_STATE.cardData.entreprise = document.getElementById('inputEntreprise')?.value || 'ENTREPRISE PRO';
+      APP_STATE.cardData.slogan = document.getElementById('inputSlogan')?.value || 'Solutions & Services Professionnels';
+      APP_STATE.cardData.tel = document.getElementById('inputTel')?.value || '+226 70 00 00 00';
+      APP_STATE.cardData.whatsapp = document.getElementById('inputWhatsapp')?.value || '+226 76 00 00 00';
+      APP_STATE.cardData.email = document.getElementById('inputEmail')?.value || 'contact@votre-domaine.bf';
+      APP_STATE.cardData.site = document.getElementById('inputSite')?.value || 'www.votre-domaine.bf';
+      APP_STATE.cardData.adresse = document.getElementById('inputAdresse')?.value || "Avenue Kwamé N'Krumah, Ouagadougou";
+
+      const model = APP_STATE.selectedModel || DEFAULT_MODELS[0];
+      const layout = model.layout || 'green-wave';
+
+      const frontContainer = document.getElementById('cardFaceFront');
+      const backContainer = document.getElementById('cardFaceBack');
+
+      if (frontContainer) {
+        frontContainer.innerHTML = getCardHtmlMarkup(layout, 'front', APP_STATE.cardData, false);
+      }
+      if (backContainer) {
+        backContainer.innerHTML = getCardHtmlMarkup(layout, 'back', APP_STATE.cardData, false);
+      }
+    }
+
+    function handleImageUpload(event, type) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        if (type === 'logo') {
+          APP_STATE.cardData.logoUrl = dataUrl;
+          const prev = document.getElementById('logoPreviewImg');
+          const cont = document.getElementById('logoPreviewContainer');
+          if (prev) prev.src = dataUrl;
+          if (cont) cont.classList.remove('hidden');
+          showToast('Logo importé avec succès !', 'success');
+        } else {
+          APP_STATE.cardData.photoUrl = dataUrl;
+          const prev = document.getElementById('photoPreviewImg');
+          const cont = document.getElementById('photoPreviewContainer');
+          if (prev) prev.src = dataUrl;
+          if (cont) cont.classList.remove('hidden');
+          showToast('Photo de profil / produit importée !', 'success');
+        }
+        updateCardPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeUploadedImage(type) {
+      if (type === 'logo') {
+        APP_STATE.cardData.logoUrl = null;
+        const cont = document.getElementById('logoPreviewContainer');
+        const inp = document.getElementById('logoUploadInput');
+        if (cont) cont.classList.add('hidden');
+        if (inp) inp.value = '';
+        showToast('Logo retiré.', 'info');
+      } else {
+        APP_STATE.cardData.photoUrl = null;
+        const cont = document.getElementById('photoPreviewContainer');
+        const inp = document.getElementById('photoUploadInput');
+        if (cont) cont.classList.add('hidden');
+        if (inp) inp.value = '';
+        showToast('Photo retirée.', 'info');
+      }
+      updateCardPreview();
+    }
+
+    function setThemeColors(bg, accent, text) {
+      APP_STATE.cardData.bgColor = bg;
+      APP_STATE.cardData.accentColor = accent;
+      APP_STATE.cardData.textColor = text;
+
+      const bgPicker = document.getElementById('colorPickerBg');
+      const accentPicker = document.getElementById('colorPickerAccent');
+      if (bgPicker) bgPicker.value = bg;
+      if (accentPicker) accentPicker.value = accent;
+
+      updateCardPreview();
+      showToast('Palette de couleurs appliquée !', 'success');
+    }
+
+    function updateCustomColors() {
+      const bg = document.getElementById('colorPickerBg')?.value || '#FFFFFF';
+      const accent = document.getElementById('colorPickerAccent')?.value || '#5BB318';
+      APP_STATE.cardData.bgColor = bg;
+      APP_STATE.cardData.accentColor = accent;
+      updateCardPreview();
+    }
+
+    /**
+     * GÉNÉRATEUR DES STRUCTURES GRAPHIQUES EXACTES (RECTO / VERSO)
+     * Reproduit fidèlement les modèles fournis par l'utilisateur avec des informations 100% neutres.
+     */
+    function getCardHtmlMarkup(layout, side, data, isMiniature = false) {
+      const nomComplet = `${data.prenom || ''} ${data.nom || ''}`.trim() || 'NOM PRÉNOM';
+      const fonction = data.fonction || 'Directeur Général';
+      const entreprise = data.entreprise || 'ENTREPRISE PRO';
+      const slogan = data.slogan || 'Solutions & Services Professionnels';
+      const tel = data.tel || '+226 70 00 00 00';
+      const whatsapp = data.whatsapp || '+226 76 00 00 00';
+      const email = data.email || 'contact@votre-domaine.bf';
+      const site = data.site || 'www.votre-domaine.bf';
+      const adresse = data.adresse || "Avenue Kwamé N'Krumah, Ouagadougou";
+
+      const bg = data.bgColor || '#FFFFFF';
+      const accent = data.accentColor || '#5BB318';
+      const text = data.textColor || '#1E293B';
+
+      const logoContent = data.logoUrl 
+        ? `<img src="${data.logoUrl}" class="w-full h-full object-contain">`
+        : `<i class="fa-solid fa-shapes text-lg" style="color: ${accent}"></i>`;
+
+      const pClass = isMiniature ? 'p-2 text-[7px]' : 'p-5 sm:p-6 text-xs';
+      const hClass = isMiniature ? 'text-[9px]' : 'text-lg sm:text-xl';
+      const subClass = isMiniature ? 'text-[7px]' : 'text-[11px] sm:text-xs';
+
+      const customBgImg = (side === 'front') ? (data.frontBgImage || APP_STATE.selectedModel?.frontBgImage) : (data.backBgImage || APP_STATE.selectedModel?.backBgImage);
+      const customBgStyle = customBgImg ? `background-image: url('${customBgImg}'); background-size: cover; background-position: center;` : '';
+
+      // =========================================================================
+      // 1. MODÈLE VERT LIME, BISEAU & QR (084d857a)
+      // =========================================================================
+      if (layout === 'green-wave') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-white text-slate-800 ${pClass}" style="${customBgStyle}">
+              <div class="flex items-center justify-between z-10">
+                <div class="flex items-center gap-2">
+                  <div class="${isMiniature ? 'w-5 h-5' : 'w-8 h-8'} flex items-center justify-center">${logoContent}</div>
+                  <div>
+                    <div class="font-black uppercase tracking-wider ${isMiniature ? 'text-[8px]' : 'text-xs'}" style="color: ${accent}">${entreprise}</div>
+                    <div class="${isMiniature ? 'text-[6px]' : 'text-[9px]'} text-slate-400 font-semibold">${slogan}</div>
+                  </div>
+                </div>
+                <div class="text-right border-b-2 pb-0.5" style="border-color: ${accent}">
+                  <h3 class="font-black uppercase tracking-tight ${hClass}">${nomComplet}</h3>
+                  <p class="font-bold uppercase tracking-wider ${subClass}" style="color: ${accent}">${fonction}</p>
+                </div>
+              </div>
+
+              <!-- Bandeau biseauté vert lime inférieur avec QR et contacts -->
+              <div class="relative mt-auto -mx-6 -mb-6 p-4 flex items-center justify-between text-white" style="background: linear-gradient(105deg, ${accent} 0%, ${accent} 38%, #4ade80 38.5%, #16a34a 100%);">
+                <div class="flex items-center gap-2 z-10 pl-2">
+                  <div class="${isMiniature ? 'w-6 h-6' : 'w-9 h-9'} bg-slate-900 rounded-lg flex items-center justify-center shadow-md text-white font-black text-[9px]">
+                    <i class="fa-solid fa-qrcode ${isMiniature ? 'text-xs' : 'text-base'}"></i>
+                  </div>
+                  <span class="${isMiniature ? 'text-[7px]' : 'text-[10px]'} font-bold uppercase tracking-wider">Scan QR</span>
+                </div>
+                <div class="space-y-0.5 text-right font-medium pr-2 ${isMiniature ? 'text-[6px]' : 'text-[10px]'}">
+                  <div>${tel} <i class="fa-solid fa-phone ml-1"></i></div>
+                  <div>${email} <i class="fa-solid fa-envelope ml-1"></i></div>
+                  <div>${adresse} <i class="fa-solid fa-location-dot ml-1"></i></div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-slate-900 text-white ${pClass}" style="${customBgStyle}">
+              <div class="my-auto text-center z-10 space-y-1">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-12 h-12'} mx-auto flex items-center justify-center">${logoContent}</div>
+                <h3 class="font-black uppercase tracking-widest ${isMiniature ? 'text-xs' : 'text-lg'}" style="color: ${accent}">${entreprise}</h3>
+                <p class="${isMiniature ? 'text-[7px]' : 'text-[10px]'} text-slate-400 font-semibold">${slogan}</p>
+              </div>
+              <div class="w-full -mx-6 -mb-6 py-2 text-center text-slate-900 font-extrabold uppercase text-[10px] tracking-wider" style="background-color: ${accent}">
+                <span>${site}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 2. MODÈLE OVALE MENTHE & NUDE (b6a6de5a)
+      // =========================================================================
+      if (layout === 'soft-mint-curve') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex items-center justify-between overflow-hidden bg-slate-100/80 ${pClass}" style="${customBgStyle}">
+              <svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
+                <path d="M 0,0 C 40,0 30,100 0,100 Z" fill="${accent}" opacity="0.35"/>
+                <path d="M 100,0 C 60,0 70,100 100,100 Z" fill="${accent}" opacity="0.35"/>
+              </svg>
+              <!-- Cartouche blanc arrondi flottant à gauche -->
+              <div class="relative z-10 bg-white shadow-md rounded-r-2xl py-2 px-3 border-l-4" style="border-color: ${accent}">
+                <h3 class="font-extrabold uppercase text-slate-900 ${isMiniature ? 'text-[8px]' : 'text-sm'}">${nomComplet}</h3>
+                <p class="font-semibold text-slate-500 ${isMiniature ? 'text-[6px]' : 'text-[10px]'}">${fonction}</p>
+              </div>
+              <!-- Coordonnées à droite avec puces circulaires -->
+              <div class="relative z-10 text-right space-y-1 text-slate-700 ${isMiniature ? 'text-[6px]' : 'text-[10px]'}">
+                <div class="flex items-center justify-end gap-1.5"><span>${site}</span><span class="w-4 h-4 rounded-full bg-slate-800 text-white flex items-center justify-center text-[7px]"><i class="fa-solid fa-globe"></i></span></div>
+                <div class="flex items-center justify-end gap-1.5"><span>${email}</span><span class="w-4 h-4 rounded-full bg-slate-800 text-white flex items-center justify-center text-[7px]"><i class="fa-solid fa-envelope"></i></span></div>
+                <div class="flex items-center justify-end gap-1.5"><span>${tel}</span><span class="w-4 h-4 rounded-full bg-slate-800 text-white flex items-center justify-center text-[7px]"><i class="fa-solid fa-phone"></i></span></div>
+                <div class="flex items-center justify-end gap-1.5"><span>${adresse}</span><span class="w-4 h-4 rounded-full bg-slate-800 text-white flex items-center justify-center text-[7px]"><i class="fa-solid fa-location-dot"></i></span></div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-slate-100 ${pClass}" style="${customBgStyle}">
+              <div class="w-4/5 h-4/5 rounded-3xl flex flex-col items-center justify-center text-white shadow-inner p-4 text-center" style="background: radial-gradient(circle, ${accent} 0%, #0d9488 100%);">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-12 h-12'} mx-auto flex items-center justify-center mb-1">${logoContent}</div>
+                <h3 class="font-black uppercase tracking-widest ${isMiniature ? 'text-xs' : 'text-base'} text-white">${entreprise}</h3>
+                <p class="${isMiniature ? 'text-[6px]' : 'text-[9px]'} opacity-90">${slogan}</p>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 3. MODÈLE CENTRE MÉDICAL & SANTÉ (85154e68)
+      // =========================================================================
+      if (layout === 'medical-care') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex overflow-hidden bg-white ${pClass}" style="${customBgStyle}">
+              <div class="w-1/2 flex flex-col items-center justify-center border-r border-slate-100 pr-2">
+                <div class="${isMiniature ? 'w-10 h-10' : 'w-16 h-16'} text-[#1D4ED8] flex items-center justify-center mb-1">
+                  <i class="fa-solid fa-square-plus text-3xl"></i>
+                </div>
+                <div class="font-black uppercase tracking-wider text-slate-800 ${isMiniature ? 'text-[7px]' : 'text-xs'}">${entreprise}</div>
+                <div class="${isMiniature ? 'text-[5px]' : 'text-[8px]'} text-slate-400 font-semibold uppercase">Santé & Diagnostic</div>
+              </div>
+              <div class="w-1/2 rounded-l-2xl p-3 flex flex-col justify-between text-white" style="background-color: ${accent}">
+                <div>
+                  <h3 class="font-black uppercase ${isMiniature ? 'text-[8px]' : 'text-sm'}">${nomComplet}</h3>
+                  <p class="font-semibold text-emerald-200 uppercase ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">${fonction}</p>
+                </div>
+                <div class="space-y-0.5 font-light ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">
+                  <div><i class="fa-solid fa-phone mr-1 opacity-80"></i>${tel}</div>
+                  <div><i class="fa-solid fa-envelope mr-1 opacity-80"></i>${email}</div>
+                  <div><i class="fa-solid fa-location-dot mr-1 opacity-80"></i>${adresse}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col items-center justify-center bg-white ${pClass}" style="${customBgStyle}">
+              <div class="absolute top-0 left-0 w-1/3 h-2 rounded-br-full" style="background-color: ${accent}"></div>
+              <div class="absolute bottom-0 right-0 w-1/3 h-2 rounded-tl-full bg-emerald-400"></div>
+              <div class="text-center space-y-2">
+                <div class="${isMiniature ? 'w-10 h-10' : 'w-16 h-16'} mx-auto text-[#1D4ED8] flex items-center justify-center">
+                  <i class="fa-solid fa-square-plus text-4xl"></i>
+                </div>
+                <h3 class="font-black uppercase tracking-widest text-slate-900 ${isMiniature ? 'text-xs' : 'text-base'}">${entreprise}</h3>
+                <p class="text-slate-500 font-bold ${isMiniature ? 'text-[7px]' : 'text-[10px]'}">${site}</p>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 4. MODÈLE CYAN/MENTHE MINIMAL & ÉPURÉ (8698f4eb)
+      // =========================================================================
+      if (layout === 'mint-creative') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex items-center justify-between overflow-hidden text-white ${pClass}" style="background-color: ${accent}; ${customBgStyle}">
+              <div class="w-1/2 flex flex-col items-center justify-center text-center pr-2">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-12 h-12'} mb-1 flex items-center justify-center">${logoContent}</div>
+                <h3 class="font-extrabold uppercase tracking-widest ${isMiniature ? 'text-[8px]' : 'text-xs'}">${entreprise}</h3>
+                <p class="${isMiniature ? 'text-[6px]' : 'text-[8px]'} opacity-80 font-light">${slogan}</p>
+              </div>
+              <div class="w-px h-3/4 bg-white/40"></div>
+              <div class="w-1/2 pl-3 space-y-1.5">
+                <div>
+                  <h4 class="font-black uppercase tracking-tight ${isMiniature ? 'text-[8px]' : 'text-sm'}">${nomComplet}</h4>
+                  <p class="font-semibold uppercase opacity-90 ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">${fonction}</p>
+                </div>
+                <div class="space-y-0.5 text-[8px] sm:text-[10px] font-light">
+                  <div><i class="fa-solid fa-phone mr-1 text-[8px]"></i>${tel}</div>
+                  <div><i class="fa-solid fa-envelope mr-1 text-[8px]"></i>${email}</div>
+                  <div><i class="fa-solid fa-location-dot mr-1 text-[8px]"></i>${adresse}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex items-center justify-between bg-white text-slate-800 ${pClass}" style="${customBgStyle}">
+              <div class="w-2.5 h-1/2 rounded-r-lg" style="background-color: ${accent}"></div>
+              <div class="text-center space-y-1 my-auto">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-12 h-12'} mx-auto flex items-center justify-center" style="color: ${accent}">${logoContent}</div>
+                <h3 class="font-black uppercase tracking-wider text-slate-900 ${isMiniature ? 'text-xs' : 'text-sm'}">${entreprise}</h3>
+                <p class="font-semibold text-slate-400 ${isMiniature ? 'text-[7px]' : 'text-[9px]'}">${site}</p>
+              </div>
+              <div class="w-2.5 h-1/2 rounded-l-lg" style="background-color: ${accent}"></div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 5. MODÈLE BICOLORE NOIR, ROUGE & LOSANGE (1cefc186)
+      // =========================================================================
+      if (layout === 'red-hex-corporate') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex overflow-hidden bg-white text-slate-800 ${pClass}" style="${customBgStyle}">
+              <div class="w-5/12 bg-slate-900 text-white flex flex-col items-center justify-center p-3 text-center">
+                <div class="${isMiniature ? 'w-6 h-6' : 'w-10 h-10'} rotate-45 border-2 border-rose-600 bg-rose-600/20 flex items-center justify-center mb-2">
+                  <div class="-rotate-45">${logoContent}</div>
+                </div>
+                <div class="font-extrabold uppercase text-white ${isMiniature ? 'text-[7px]' : 'text-[11px]'}">${entreprise}</div>
+                <div class="${isMiniature ? 'text-[5px]' : 'text-[8px]'} text-slate-400 font-medium">${slogan}</div>
+              </div>
+              <div class="w-8 bg-rose-600 flex flex-col items-center justify-around text-white py-4 text-[10px]">
+                <i class="fa-solid fa-user"></i>
+                <i class="fa-solid fa-phone"></i>
+                <i class="fa-solid fa-envelope"></i>
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div class="flex-1 p-3 flex flex-col justify-around text-slate-800 ${isMiniature ? 'text-[6px]' : 'text-[10px]'}">
+                <div>
+                  <h3 class="font-black uppercase text-slate-900 ${isMiniature ? 'text-[8px]' : 'text-xs'}">${nomComplet}</h3>
+                  <p class="text-rose-600 font-bold ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">${fonction}</p>
+                </div>
+                <div>${tel}</div>
+                <div>${email}</div>
+                <div>${adresse}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between bg-white text-slate-900 ${pClass}" style="${customBgStyle}">
+              <div class="my-auto text-center space-y-2">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-14 h-14'} mx-auto rotate-45 border-2 border-rose-600 bg-rose-600/10 flex items-center justify-center">
+                  <div class="-rotate-45">${logoContent}</div>
+                </div>
+                <h3 class="font-black uppercase tracking-widest text-slate-900 ${isMiniature ? 'text-xs' : 'text-base'}">${entreprise}</h3>
+                <p class="text-slate-400 font-semibold ${isMiniature ? 'text-[7px]' : 'text-[9px]'}">${slogan}</p>
+              </div>
+              <div class="w-full bg-slate-900 py-2 -mx-6 -mb-6 text-center text-white text-[10px] font-bold">
+                <span class="text-rose-500 font-black">${site}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 6. MODÈLE RUBAN ORANGE VERTICAL & QR (fc0f0a2b)
+      // =========================================================================
+      if (layout === 'orange-tab-media') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex items-center justify-between overflow-hidden bg-white text-slate-900 ${pClass}" style="${customBgStyle}">
+              <div class="w-5/12 flex flex-col items-center justify-center text-center p-2">
+                <div class="font-black uppercase text-slate-900 ${isMiniature ? 'text-[8px]' : 'text-xs'} mb-1">${entreprise}</div>
+                <div class="${isMiniature ? 'w-10 h-10' : 'w-16 h-16'} p-1 border-2 border-amber-500 rounded-lg flex items-center justify-center shadow-sm">
+                  <i class="fa-solid fa-qrcode ${isMiniature ? 'text-base' : 'text-3xl'} text-amber-600"></i>
+                </div>
+                <span class="${isMiniature ? 'text-[5px]' : 'text-[8px]'} font-bold uppercase text-slate-400 mt-1">Scanner Contacts</span>
+              </div>
+              <div class="w-7 bg-amber-500 rounded-full py-3 flex flex-col items-center justify-around text-white text-[9px] shadow-sm">
+                <i class="fa-solid fa-user"></i>
+                <i class="fa-solid fa-phone"></i>
+                <i class="fa-solid fa-envelope"></i>
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div class="w-5/12 p-2 flex flex-col justify-around text-slate-700 ${isMiniature ? 'text-[6px]' : 'text-[10px]'}">
+                <div>
+                  <h3 class="font-extrabold uppercase text-slate-900 ${isMiniature ? 'text-[8px]' : 'text-xs'}">${nomComplet}</h3>
+                  <p class="font-bold text-amber-600 ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">${fonction}</p>
+                </div>
+                <div>${tel}</div>
+                <div>${email}</div>
+                <div>${adresse}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-slate-900 text-white ${pClass}" style="${customBgStyle}">
+              <div class="w-full h-0.5 bg-amber-500 absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none"></div>
+              <div class="my-auto z-10 bg-slate-900 px-6 py-2 mx-auto rounded-xl border border-amber-500/40 text-center">
+                <h3 class="font-black uppercase tracking-widest ${isMiniature ? 'text-xs' : 'text-base'} text-amber-500">${entreprise}</h3>
+                <p class="text-slate-400 ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">${slogan}</p>
+              </div>
+              <div class="w-full bg-amber-500 py-1.5 -mx-6 -mb-6 text-center text-slate-900 font-extrabold text-[10px]">
+                ${site}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 7. MODÈLE DREAMPIX TECH & ORIGAMI (e952a26a)
+      // =========================================================================
+      if (layout === 'dreampix-origami') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex overflow-hidden bg-white ${pClass}" style="${customBgStyle}">
+              <div class="w-1/2 flex flex-col items-center justify-center p-3 text-center border-r border-slate-100">
+                <div class="font-black uppercase text-slate-900 tracking-wider ${isMiniature ? 'text-[8px]' : 'text-xs'} mb-1">${entreprise}</div>
+                <div class="${isMiniature ? 'w-10 h-10' : 'w-16 h-16'} p-1 border-2 border-orange-500 rounded-lg flex items-center justify-center shadow-sm">
+                  <i class="fa-solid fa-qrcode text-orange-600 ${isMiniature ? 'text-lg' : 'text-3xl'}"></i>
+                </div>
+              </div>
+              <div class="w-1/2 bg-slate-900 text-white p-3 flex flex-col justify-between relative">
+                <div>
+                  <h3 class="font-black uppercase text-white ${isMiniature ? 'text-[8px]' : 'text-xs'}">${nomComplet}</h3>
+                  <p class="text-orange-400 font-bold uppercase ${isMiniature ? 'text-[6px]' : 'text-[8px]'}">${fonction}</p>
+                </div>
+                <div class="-mx-3 bg-orange-500 text-slate-900 py-1 px-3 text-[9px] font-bold shadow-md">
+                  <i class="fa-solid fa-phone mr-1"></i>${tel}
+                </div>
+                <div class="space-y-0.5 text-slate-300 ${isMiniature ? 'text-[6px]' : 'text-[8px]'}">
+                  <div><i class="fa-solid fa-envelope mr-1 text-orange-400"></i>${email}</div>
+                  <div><i class="fa-solid fa-location-dot mr-1 text-orange-400"></i>${adresse}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-slate-900 text-white ${pClass}" style="${customBgStyle}">
+              <div class="my-auto text-center space-y-2">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-12 h-12'} mx-auto text-orange-500 flex items-center justify-center">${logoContent}</div>
+                <h3 class="font-black uppercase tracking-widest ${isMiniature ? 'text-xs' : 'text-lg'} text-white">${entreprise}</h3>
+                <p class="text-slate-400 ${isMiniature ? 'text-[6px]' : 'text-[10px]'} font-semibold">${slogan}</p>
+              </div>
+              <div class="w-full bg-orange-500 py-2 -mx-6 -mb-6 text-center text-slate-900 font-extrabold text-[10px] tracking-wider">
+                ${site}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 8. MODÈLE VITRINE PRODUITS & MODE (928f6697)
+      // =========================================================================
+      if (layout === 'fabrics-showcase') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-white text-slate-900 ${pClass}" style="${customBgStyle}">
+              <div class="text-center pt-1">
+                <div class="font-black text-amber-500 text-lg uppercase tracking-widest leading-none">MG</div>
+                <h3 class="font-black uppercase tracking-wider text-slate-900 ${isMiniature ? 'text-[9px]' : 'text-sm'}">${entreprise}</h3>
+                <div class="w-12 h-0.5 bg-amber-500 mx-auto mt-0.5"></div>
+              </div>
+              <div class="grid grid-cols-4 gap-1.5 my-auto px-1">
+                <div class="aspect-square rounded-lg bg-amber-100 overflow-hidden shadow-inner flex items-center justify-center text-amber-700 text-[10px]">
+                  <i class="fa-solid fa-shirt"></i>
+                </div>
+                <div class="aspect-square rounded-lg bg-rose-100 overflow-hidden shadow-inner flex items-center justify-center text-rose-700 text-[10px]">
+                  <i class="fa-solid fa-vest-patches"></i>
+                </div>
+                <div class="aspect-square rounded-lg bg-sky-100 overflow-hidden shadow-inner flex items-center justify-center text-sky-700 text-[10px]">
+                  <i class="fa-solid fa-scroll"></i>
+                </div>
+                <div class="aspect-square rounded-lg bg-emerald-100 overflow-hidden shadow-inner flex items-center justify-center text-emerald-700 text-[10px]">
+                  <i class="fa-solid fa-gem"></i>
+                </div>
+              </div>
+              <div class="border-t border-slate-200 pt-1 flex justify-between items-center text-slate-500 ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">
+                <span>${tel}</span>
+                <span class="font-bold text-amber-600">${site}</span>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-slate-900 text-white ${pClass}" style="${customBgStyle}">
+              <div class="grid grid-cols-2 gap-2 text-[9px] text-slate-300 pt-1">
+                <div>
+                  <div class="font-bold text-amber-400 uppercase tracking-wider text-[10px] mb-1">Nos Spécialités :</div>
+                  <ul class="space-y-0.5 font-light ${isMiniature ? 'text-[5px]' : 'text-[8px]'}">
+                    <li>• Tissus & Bazin Riche</li>
+                    <li>• Wax & Soie Véritable</li>
+                    <li>• Confection Haute Couture</li>
+                    <li>• Vente en Gros & Détail</li>
+                  </ul>
+                </div>
+                <div class="text-right space-y-1 ${isMiniature ? 'text-[5px]' : 'text-[8px]'}">
+                  <div class="font-bold text-amber-400 uppercase text-[10px]">Adresse :</div>
+                  <div>${adresse}</div>
+                  <div>Tél : ${tel}</div>
+                  <div>WhatsApp : ${whatsapp}</div>
+                </div>
+              </div>
+              <div class="text-center border-t border-slate-800 pt-1 text-amber-400 italic font-serif text-[10px]">
+                Merci pour votre confiance !
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // =========================================================================
+      // 9. MODÈLE GASTRONOMIE & TRAITEUR (70bebcba / 4044cda3)
+      // =========================================================================
+      if (layout === 'gourmet-catering') {
+        if (side === 'front') {
+          return `
+            <div class="relative w-full h-full flex overflow-hidden bg-white text-slate-900 ${pClass}" style="${customBgStyle}">
+              <div class="w-1/2 p-2 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-black uppercase text-orange-600 ${isMiniature ? 'text-[8px]' : 'text-sm'}">${entreprise}</h3>
+                  <p class="font-semibold text-slate-500 ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">${slogan}</p>
+                </div>
+                <div class="space-y-0.5 text-slate-600 font-medium ${isMiniature ? 'text-[6px]' : 'text-[9px]'}">
+                  <div><i class="fa-solid fa-utensils text-orange-500 mr-1"></i>Traiteur & Événements</div>
+                  <div><i class="fa-solid fa-phone text-orange-500 mr-1"></i>${tel}</div>
+                  <div><i class="fa-solid fa-location-dot text-orange-500 mr-1"></i>${adresse}</div>
+                </div>
+              </div>
+              <div class="w-1/2 grid grid-cols-2 gap-1 p-1 bg-orange-50/50 rounded-l-2xl">
+                <div class="rounded-lg bg-orange-200 overflow-hidden flex items-center justify-center text-orange-800 text-xs shadow-inner">
+                  <i class="fa-solid fa-bowl-food"></i>
+                </div>
+                <div class="rounded-lg bg-amber-200 overflow-hidden flex items-center justify-center text-amber-800 text-xs shadow-inner">
+                  <i class="fa-solid fa-burger"></i>
+                </div>
+                <div class="rounded-lg bg-rose-200 overflow-hidden flex items-center justify-center text-rose-800 text-xs shadow-inner">
+                  <i class="fa-solid fa-drumstick-bite"></i>
+                </div>
+                <div class="rounded-lg bg-yellow-200 overflow-hidden flex items-center justify-center text-yellow-800 text-xs shadow-inner">
+                  <i class="fa-solid fa-cake-candles"></i>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-slate-900 text-white ${pClass}" style="${customBgStyle}">
+              <div class="my-auto text-center space-y-1">
+                <div class="${isMiniature ? 'w-8 h-8' : 'w-12 h-12'} mx-auto text-orange-500 flex items-center justify-center">
+                  <i class="fa-solid fa-utensils ${isMiniature ? 'text-lg' : 'text-3xl'}"></i>
+                </div>
+                <h3 class="font-black uppercase tracking-widest ${isMiniature ? 'text-xs' : 'text-base'} text-orange-400">${entreprise}</h3>
+                <p class="text-slate-300 font-semibold ${isMiniature ? 'text-[7px]' : 'text-[10px]'}">${slogan}</p>
+              </div>
+              <div class="w-full bg-orange-600 py-1.5 -mx-6 -mb-6 text-center text-white font-extrabold text-[10px]">
+                ${site}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Par défaut
+      return `
+        <div class="relative w-full h-full flex flex-col justify-between overflow-hidden bg-slate-900 text-white ${pClass}" style="${customBgStyle}">
+          <div>
+            <h3 class="font-black uppercase ${hClass}">${nomComplet}</h3>
+            <p class="font-bold uppercase text-kart-orange ${subClass}">${fonction}</p>
+          </div>
+          <div class="text-right ${isMiniature ? 'text-[7px]' : 'text-[10px]'}">
+            <div>${tel}</div>
+            <div>${email}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openNewModelModal() {
+      document.getElementById('newModelModal')?.classList.remove('hidden');
+      updateNewModelDefaultPrice();
+    }
+
+    function closeNewModelModal() {
+      document.getElementById('newModelModal')?.classList.add('hidden');
+      APP_STATE.uploadedNewModelFrontBg = null;
+      APP_STATE.uploadedNewModelBackBg = null;
+      const frontInp = document.getElementById('newModelFrontFile');
+      const backInp = document.getElementById('newModelBackFile');
+      const frontPrev = document.getElementById('newModelFrontPreview');
+      const backPrev = document.getElementById('newModelBackPreview');
+      if (frontInp) frontInp.value = '';
+      if (backInp) backInp.value = '';
+      if (frontPrev) frontPrev.innerHTML = '<span>Aucune image importée (fond vectoriel officiel)</span>';
+      if (backPrev) backPrev.innerHTML = '<span>Aucune image importée</span>';
+      document.getElementById('newModelForm')?.reset();
+    }
+
+    function updateNewModelDefaultPrice() {
+      const tier = document.getElementById('newModelTier')?.value;
+      const priceInput = document.getElementById('newModelPrice');
+      if (priceInput && tier && APP_STATE.tierPrices[tier]) {
+        priceInput.value = APP_STATE.tierPrices[tier];
+      }
+    }
+
+    function handleModelBgUpload(event, side) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        if (side === 'front') {
+          APP_STATE.uploadedNewModelFrontBg = dataUrl;
+          const prev = document.getElementById('newModelFrontPreview');
+          if (prev) prev.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover">`;
+          showToast('Maquette Recto téléversée avec succès !', 'success');
+        } else {
+          APP_STATE.uploadedNewModelBackBg = dataUrl;
+          const prev = document.getElementById('newModelBackPreview');
+          if (prev) prev.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover">`;
+          showToast('Maquette Verso téléversée !', 'success');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleNewModelSubmit(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('newModelName').value.trim();
+      const ref = document.getElementById('newModelRef').value.trim() || 'Modèle Personnalisé Admin';
+      const tier = document.getElementById('newModelTier').value;
+      const sector = document.getElementById('newModelSector').value;
+      const orientation = document.getElementById('newModelOrientation').value;
+      const price = parseInt(document.getElementById('newModelPrice').value) || APP_STATE.tierPrices[tier];
+      const layout = document.getElementById('newModelLayout').value;
+      const bg = document.getElementById('newModelBgColor').value;
+      const accent = document.getElementById('newModelAccentColor').value;
+      const text = document.getElementById('newModelTextColor').value;
+      const desc = document.getElementById('newModelDesc').value.trim() || 'Nouveau modèle professionnel ajouté par l\'administrateur.';
+
+      const newModel = {
+        id: 'model-' + Date.now(),
+        name: name,
+        reference: ref,
+        tier: tier,
+        sector: sector,
+        orientation: orientation,
+        price: price,
+        bg: bg,
+        accent: accent,
+        text: text,
+        layout: layout,
+        description: desc,
+        frontBgImage: APP_STATE.uploadedNewModelFrontBg || null,
+        backBgImage: APP_STATE.uploadedNewModelBackBg || null,
+        isCustom: true
+      };
+
+      APP_STATE.models.unshift(newModel);
+      saveModelsToStorage(APP_STATE.models);
+
+      renderCatalogue();
+      renderAdminModelsTable();
+      updateEditorUI();
+      closeNewModelModal();
+
+      showToast(`Le modèle "${name}" (${price.toLocaleString('fr-FR')} FCFA) a été publié avec succès !`, 'success');
+    }
+
+    function promptDeleteModel(modelId) {
+      const model = APP_STATE.models.find(m => m.id === modelId);
+      if (!model) return;
+
+      APP_STATE.modelToDeleteId = modelId;
+      const confirmText = document.getElementById('deleteConfirmModelText');
+      if (confirmText) {
+        confirmText.innerText = `Êtes-vous sûr de vouloir retirer le modèle "${model.name}" du catalogue public et de l'éditeur ?`;
+      }
+      document.getElementById('deleteConfirmModal')?.classList.remove('hidden');
+    }
+
+    function closeDeleteConfirmModal() {
+      document.getElementById('deleteConfirmModal')?.classList.add('hidden');
+      APP_STATE.modelToDeleteId = null;
+    }
+
+    function executeModelDeletion() {
+      if (!APP_STATE.modelToDeleteId) return;
+
+      const id = APP_STATE.modelToDeleteId;
+      const index = APP_STATE.models.findIndex(m => m.id === id);
+      
+      if (index !== -1) {
+        const removed = APP_STATE.models.splice(index, 1)[0];
+        saveModelsToStorage(APP_STATE.models);
+
+        if (APP_STATE.selectedModel && APP_STATE.selectedModel.id === id) {
+          APP_STATE.selectedModel = APP_STATE.models[0] || DEFAULT_MODELS[0];
+          updateEditorUI();
+          updateCardPreview();
+        }
+
+        renderCatalogue();
+        renderAdminModelsTable();
+        closeDeleteConfirmModal();
+
+        showToast(`Le modèle obsolète "${removed.name}" a été définitivement retiré.`, 'info');
+      }
+    }
+
+    function resetModelsToDefault() {
+      APP_STATE.models = JSON.parse(JSON.stringify(DEFAULT_MODELS));
+      saveModelsToStorage(APP_STATE.models);
+      APP_STATE.selectedModel = APP_STATE.models[0];
+      
+      renderCatalogue();
+      renderAdminModelsTable();
+      updateEditorUI();
+      updateCardPreview();
+      
+      showToast('Catalogue réinitialisé avec les modèles officiels.', 'info');
+    }
+
+    function renderAdminModelsTable() {
+      const tbody = document.getElementById('adminModelsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const countKpi = document.getElementById('adminKpiModelsCount');
+      if (countKpi) countKpi.innerText = APP_STATE.models.length;
+
+      APP_STATE.models.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+        
+        const previewBg = m.frontBgImage 
+          ? `<div class="w-10 h-6 rounded border bg-cover bg-center" style="background-image: url('${m.frontBgImage}')"></div>`
+          : `<div class="w-10 h-6 rounded border flex items-center justify-center text-[9px]" style="background-color: ${m.bg}; color: ${m.accent};"><i class="fa-solid fa-id-card"></i></div>`;
+
+        tr.innerHTML = `
+          <td class="px-5 py-3.5">${previewBg}</td>
+          <td class="px-5 py-3.5">
+            <div class="font-bold text-slate-900 leading-snug">${m.name}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${m.reference || 'Ref ID: ' + m.id}</div>
+          </td>
+          <td class="px-5 py-3.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+              m.tier === 'Professionnel' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+              m.tier === 'Standard' ? 'bg-orange-100 text-kart-orange border border-orange-300' :
+              'bg-slate-100 text-slate-700'
+            }">${m.tier}</span>
+          </td>
+          <td class="px-5 py-3.5 capitalize">${m.sector}</td>
+          <td class="px-5 py-3.5 capitalize"><i class="fa-solid ${m.orientation === 'vertical' ? 'fa-arrows-up-down' : 'fa-arrows-left-right'} text-slate-400 mr-1"></i>${m.orientation}</td>
+          <td class="px-5 py-3.5">
+            <input type="number" id="modelPriceInput-${m.id}" value="${m.price}" step="100" class="w-24 px-2 py-1 border border-slate-300 rounded font-bold text-kart-dark focus:ring-1 focus:ring-kart-orange focus:outline-none">
+          </td>
+          <td class="px-5 py-3.5">
+            <span class="text-emerald-600 font-bold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>${m.isCustom ? 'Personnalisé' : 'Officiel'}
+            </span>
+          </td>
+          <td class="px-5 py-3.5 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="saveIndividualModelPrice('${m.id}')" class="p-1.5 bg-slate-900 text-white rounded-lg text-xs hover:bg-kart-orange transition" title="Enregistrer le prix">
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button onclick="promptDeleteModel('${m.id}')" class="p-1.5 bg-red-100 text-red-600 rounded-lg text-xs hover:bg-red-600 hover:text-white transition" title="Supprimer ce modèle">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function saveIndividualModelPrice(modelId) {
+      const input = document.getElementById(`modelPriceInput-${modelId}`);
+      const newPrice = parseInt(input.value);
+      const model = APP_STATE.models.find(m => m.id === modelId);
+
+      if (model && newPrice > 0) {
+        model.price = newPrice;
+        saveModelsToStorage(APP_STATE.models);
+        renderCatalogue();
+        updateEditorUI();
+        showToast(`Prix du modèle "${model.name}" mis à jour : ${newPrice.toLocaleString('fr-FR')} FCFA.`, 'success');
+      }
+    }
+
+    function saveGlobalPrices() {
+      const pEssentiel = parseInt(document.getElementById('adminPriceEssentiel').value);
+      const pStandard = parseInt(document.getElementById('adminPriceStandard').value);
+      const pProfessionnel = parseInt(document.getElementById('adminPriceProfessionnel').value);
+
+      if (pEssentiel > 0 && pStandard > 0 && pProfessionnel > 0) {
+        APP_STATE.tierPrices.Essentiel = pEssentiel;
+        APP_STATE.tierPrices.Standard = pStandard;
+        APP_STATE.tierPrices.Professionnel = pProfessionnel;
+
+        APP_STATE.models.forEach(m => {
+          m.price = APP_STATE.tierPrices[m.tier];
+        });
+
+        saveModelsToStorage(APP_STATE.models);
+
+        const dEss = document.getElementById('display-price-essentiel');
+        const dStd = document.getElementById('display-price-standard');
+        const dPro = document.getElementById('display-price-professionnel');
+        if (dEss) dEss.innerText = pEssentiel.toLocaleString('fr-FR');
+        if (dStd) dStd.innerText = pStandard.toLocaleString('fr-FR');
+        if (dPro) dPro.innerText = pProfessionnel.toLocaleString('fr-FR');
+
+        renderCatalogue();
+        renderAdminModelsTable();
+        updateEditorUI();
+        showToast('Les prix des gammes ont été réajustés sur l\'ensemble de l\'application !', 'success');
+      }
+    }
+
+    function renderAdminAgenciesTable() {
+      const tbody = document.getElementById('adminAgenciesTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      APP_STATE.printers.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        const estVolume = (idx + 1) * 350000;
+        const estCommission = estVolume * 0.01; // 1%
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-bold text-slate-900">${p.name}</td>
+          <td class="px-4 py-3">${p.district}, ${p.city}</td>
+          <td class="px-4 py-3 font-mono">${p.phone}</td>
+          <td class="px-4 py-3 font-bold text-kart-orange">15 000 FCFA / mois</td>
+          <td class="px-4 py-3 font-mono text-slate-800">${estVolume.toLocaleString('fr-FR')} F</td>
+          <td class="px-4 py-3 font-mono font-bold text-emerald-600">${estCommission.toLocaleString('fr-FR')} F (1%)</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">À jour</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPrintersList() {
+      const container = document.getElementById('printersListGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const searchCity = (document.getElementById('searchPrinterCity')?.value || '').toLowerCase().trim();
+      const serviceFilter = document.getElementById('filterPrinterService')?.value || 'ALL';
+
+      const filtered = APP_STATE.printers.filter(p => {
+        const matchesCity = !searchCity || 
+          p.city.toLowerCase().includes(searchCity) || 
+          p.district.toLowerCase().includes(searchCity) ||
+          p.name.toLowerCase().includes(searchCity);
+
+        const matchesService = (serviceFilter === 'ALL' || p.type === serviceFilter);
+        return matchesCity && matchesService;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-12 text-center text-slate-400">
+            <i class="fa-solid fa-store-slash text-3xl mb-2"></i>
+            <p class="text-sm font-semibold">Aucune imprimerie partenaire trouvée dans cette zone.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between";
+
+        const servicesTags = p.services.map(s => 
+          `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${s}</span>`
+        ).join('');
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 mb-1">
+                  <i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i>Partenaire Agréé
+                </span>
+                <h4 class="font-extrabold text-base text-slate-900">${p.name}</h4>
+              </div>
+              <div class="flex items-center gap-1 text-xs font-black text-amber-500">
+                <i class="fa-solid fa-star"></i>
+                <span>${p.rating}</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-slate-500 mt-2 space-y-1">
+              <div class="flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-kart-orange w-3.5"></i> ${p.district}, ${p.city}</div>
+              <div class="flex items-center gap-1.5"><i class="fa-solid fa-phone text-slate-400 w-3.5"></i> ${p.phone}</div>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100">
+              ${servicesTags}
+            </div>
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-slate-100 flex items-center gap-2">
+            <a href="https://wa.me/${p.whatsapp}?text=Bonjour%2C%20je%20viens%20de%20la%20part%20de%20My%20KARTpro%20pour%20imprimer%20mes%20cartes%20de%20visite." target="_blank" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i class="fa-brands fa-whatsapp text-sm"></i>
+              <span>WhatsApp Direct</span>
+            </a>
+            <a href="tel:${p.phone.replace(/\s+/g, '')}" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition" title="Appeler">
+              <i class="fa-solid fa-phone"></i>
+            </a>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function filterPrinters() {
+      renderPrintersList();
+    }
+
+    function openAgencyRegisterModal() {
+      document.getElementById('agencyRegisterModal')?.classList.remove('hidden');
+    }
+
+    function closeAgencyRegisterModal() {
+      document.getElementById('agencyRegisterModal')?.classList.add('hidden');
+    }
+
+    function submitAgencyRegistration() {
+      const name = document.getElementById('agencyNameInput')?.value.trim();
+      const city = document.getElementById('agencyCityInput')?.value.trim() || 'Ouagadougou';
+      const district = document.getElementById('agencyDistrictInput')?.value.trim() || 'Centre';
+      const phone = document.getElementById('agencyPhoneInput')?.value.trim();
+      const whatsapp = document.getElementById('agencyWhatsappInput')?.value.trim() || '22670000000';
+      const servicesStr = document.getElementById('agencyServicesInput')?.value.trim() || 'Impression numérique 350g';
+
+      if (!name || !phone) {
+        showToast('Veuillez saisir au moins le nom et le contact téléphonique.', 'error');
+        return;
+      }
+
+      const newPrinter = {
+        id: 'p-' + Date.now(),
+        name: name,
+        city: city,
+        district: district,
+        phone: phone,
+        whatsapp: whatsapp.replace(/\D/g, ''),
+        services: servicesStr.split(',').map(s => s.trim()).filter(Boolean),
+        type: 'express',
+        rating: 5.0,
+        subscriptionPaid: true
+      };
+
+      APP_STATE.printers.unshift(newPrinter);
+      renderPrintersList();
+      renderAdminAgenciesTable();
+      closeAgencyRegisterModal();
+
+      showToast(`L'imprimerie "${name}" a été enregistrée avec succès (Abonnement 15 000 FCFA/mois activé).`, 'success');
+    }
+
+    function downloadCardPreview(format = 'png') {
+      const targetSide = APP_STATE.currentSide === 'front' ? 'cardFaceFront' : 'cardFaceBack';
+      const element = document.getElementById(targetSide);
+      if (!element) return;
+
+      showToast(`Préparation du fichier ${format.toUpperCase()}...`, 'info');
+
+      if (window.html2canvas) {
+        window.html2canvas(element, { scale: 3, useCORS: true }).then(canvas => {
+          const imgData = canvas.toDataURL(format === 'png' ? 'image/png' : 'image/jpeg', 0.95);
+          const link = document.createElement('a');
+          link.download = `MyKARTpro-${APP_STATE.cardData.nom || 'carte'}-${APP_STATE.currentSide}.${format}`;
+          link.href = imgData;
+          link.click();
+          showToast(`Export ${format.toUpperCase()} téléchargé avec succès !`, 'success');
+        }).catch(err => {
+          console.error(err);
+          showToast("Erreur lors de la génération de l'image.", 'error');
+        });
+      } else {
+        showToast("Librairie d'export indisponible.", 'error');
+      }
+    }
+
+    function openPaymentModal() {
+      const m = APP_STATE.selectedModel || DEFAULT_MODELS[0];
+      const nameEl = document.getElementById('modalOrderModelName');
+      const amountEl = document.getElementById('modalOrderAmount');
+
+      if (nameEl) nameEl.innerText = m.name;
+      if (amountEl) amountEl.innerText = m.price.toLocaleString('fr-FR');
+
+      document.getElementById('paymentModal')?.classList.remove('hidden');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('paymentModal')?.classList.add('hidden');
+    }
+
+    function processSaspayPayment() {
+      const btn = document.getElementById('btnSubmitPayment');
+      const phone = document.getElementById('mobileMoneyPhone')?.value.trim();
+      const model = APP_STATE.selectedModel || DEFAULT_MODELS[0];
+
+      if (!phone) {
+        showToast('Veuillez renseigner votre numéro Mobile Money.', 'error');
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Initialisation saspay.me...</span>`;
+      }
+
+      setTimeout(() => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>Payer via saspay.me</span>`;
+        }
+        closePaymentModal();
+        showToast(`Paiement de ${model.price.toLocaleString('fr-FR')} FCFA validé via saspay.me ! Déblocage des fichiers HD...`, 'success');
+
+        generateCertifiedPdf();
+      }, 1600);
+    }
+
+    function generateCertifiedPdf() {
+      const element = document.getElementById('cardFaceFront');
+      if (!element) return;
+
+      if (window.html2canvas && window.jspdf) {
+        window.html2canvas(element, { scale: 4, useCORS: true }).then(canvas => {
+          const imgData = canvas.toDataURL('image/jpeg', 1.0);
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: [85, 55]
+          });
+
+          doc.addImage(imgData, 'JPEG', 0, 0, 85, 55);
+          doc.save(`MyKARTpro-HD-${APP_STATE.cardData.nom || 'carte'}-300DPI.pdf`);
+          showToast('Fichier PDF certifié 300 DPI pour imprimeur généré !', 'success');
+        }).catch(err => {
+          console.error(err);
+          showToast('Erreur génération PDF.', 'error');
+        });
+      }
+    }
+
+    function buyCreditPack(packName, credits, price) {
+      showToast(`Commande Pack ${packName} (${credits} crédits pour ${price.toLocaleString('fr-FR')} FCFA) redirigée vers saspay.me.`, 'info');
+      setTimeout(() => {
+        showToast(`Pack ${packName} activé ! ${credits} crédits ajoutés à votre compte créatif.`, 'success');
+      }, 1200);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-800 text-white border-emerald-700',
+        error: 'bg-red-800 text-white border-red-700',
+        info: 'bg-slate-900 text-white border-slate-700'
+      };
+
+      const icons = {
+        success: 'fa-circle-check text-emerald-400',
+        error: 'fa-circle-xmark text-red-400',
+        info: 'fa-circle-info text-kart-orange'
+      };
+
+      toast.className = `p-3.5 rounded-xl border shadow-xl flex items-center gap-3 text-xs font-semibold pointer-events-auto transform transition-all duration-300 translate-y-3 opacity-0 ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type]} text-base"></i>
+        <div class="flex-grow">${message}</div>
+      `;
+
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
